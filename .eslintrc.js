@@ -8,6 +8,7 @@ module.exports = {
             'warn',
             {
                 tabWidth: 4,
+                endOfLine: 'auto',
             },
         ],
         'no-shadow': 0,
