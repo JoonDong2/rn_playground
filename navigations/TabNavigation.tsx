@@ -17,52 +17,54 @@ const Tab = createBottomTabNavigator<RootTabNavigationProp>();
 
 export default () => {
     return (
-        <Tab.Navigator tabBar={({ state, descriptors, navigation }: BottomTabBarProps) => {
-            return (
-                <View style={{
-                    height: 60,
-                    flexDirection: 'row'
-                }}>
-                    {state.routes.map((route, index) => {
-                        const { options } = descriptors[route.key];
-                        const label =
-                            options.tabBarLabel !== undefined
-                                ? options.tabBarLabel
-                                : options.title !== undefined
-                                    ? options.title
-                                    : route.name;
+        <Tab.Navigator
+            screenOptions={{ headerShown: false }}
+            tabBar={({ state, descriptors, navigation }: BottomTabBarProps) => {
+                return (
+                    <View style={{
+                        height: 60,
+                        flexDirection: 'row'
+                    }}>
+                        {state.routes.map((route, index) => {
+                            const { options } = descriptors[route.key];
+                            const label =
+                                options.tabBarLabel !== undefined
+                                    ? options.tabBarLabel
+                                    : options.title !== undefined
+                                        ? options.title
+                                        : route.name;
 
-                        const isFocused = state.index === index;
+                            const isFocused = state.index === index;
 
-                        const onPress = () => {
-                            const event = navigation.emit({
-                                type: 'tabPress',
-                                target: route.key,
-                                canPreventDefault: true,
-                            });
+                            const onPress = () => {
+                                const event = navigation.emit({
+                                    type: 'tabPress',
+                                    target: route.key,
+                                    canPreventDefault: true,
+                                });
 
-                            if (!isFocused && !event.defaultPrevented) {
-                                // The `merge: true` option makes sure that the params inside the tab screen are preserved
-                                navigation.navigate(route.name, { merge: true });
-                            }
-                        };
+                                if (!isFocused && !event.defaultPrevented) {
+                                    // The `merge: true` option makes sure that the params inside the tab screen are preserved
+                                    navigation.navigate(route.name, { merge: true });
+                                }
+                            };
 
-                        return (
-                            <TouchableWithoutFeedback onPress={onPress} key={route.name}>
-                                <View style={{
-                                    height: 60,
-                                    flex: 1,
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                }}>
-                                    <Text>{label}</Text>
-                                </View>
-                            </TouchableWithoutFeedback>
-                        )
-                    })}
-                </View>
-            )
-        }}>
+                            return (
+                                <TouchableWithoutFeedback onPress={onPress} key={route.name}>
+                                    <View style={{
+                                        height: 60,
+                                        flex: 1,
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                    }}>
+                                        <Text>{label}</Text>
+                                    </View>
+                                </TouchableWithoutFeedback>
+                            )
+                        })}
+                    </View>
+                )
+            }}>
             <Tab.Screen name="Zoom" component={Zoom} />
             <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
         </Tab.Navigator>
