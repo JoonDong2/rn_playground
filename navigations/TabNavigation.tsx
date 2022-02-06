@@ -23,6 +23,7 @@ export default () => {
         <View style={{
             flex: 1,
             paddingBottom: bottom,
+            backgroundColor: '#ffffff',
         }}>
             <Tab.Navigator
                 screenOptions={{ headerShown: false }}
@@ -30,7 +31,9 @@ export default () => {
                     return (
                         <View style={{
                             height: 60,
-                            flexDirection: 'row'
+                            flexDirection: 'row',
+                            borderTopColor: '#000000',
+                            borderTopWidth: 0.5,
                         }}>
                             {state.routes.map((route, index) => {
                                 const { options } = descriptors[route.key];
