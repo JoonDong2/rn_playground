@@ -64,7 +64,9 @@ export default () => {
                                             justifyContent: 'center',
                                             alignItems: 'center',
                                         }}>
-                                            <Text>{label}</Text>
+                                            <Text style={{
+                                                fontWeight: isFocused ? 'bold' : 'normal'
+                                            }}>{label}</Text>
                                         </View>
                                     </TouchableWithoutFeedback>
                                 )
