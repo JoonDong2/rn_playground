@@ -77,19 +77,13 @@ export default ({ navigation }: TabProps) => {
         return {
             height: modalHeight.value,
             top: modalTop.value,
-            // transform: [{
-            //     translateY:(TAB_BAR_HEIGHT + bottom) * ((modalTop.value - top) / MINIFIED_MODAL_HEIGHT)
-            // }],
         };
     });
 
     const openModal = useCallback(() => {
         setModalVisible(true);
         modalHeight.value = modalMaxHeight;
-        modalTop.value = withTiming(top, {
-            duration: 650,
-            easing: Easing.out(Easing.exp),
-        });
+        modalTop.value = withTiming(top);
     }, [modalHeight, modalTop, top]);
 
     const closeModal = useCallback(() => setModalVisible(false), []);
@@ -109,7 +103,7 @@ export default ({ navigation }: TabProps) => {
             ctx.firstModalTop = modalTop.value;
         },
         onActive: (event, ctx) => {
-            if (!ctx.minY || !ctx.maxY) {
+            if (!ctx.minY && !ctx.maxY) {
                 // 풀스크린 상태에서 제스쳐를 시작한 경우
                 if (ctx.firstModalTop === top) {
                     ctx.minY = top;
@@ -129,18 +123,23 @@ export default ({ navigation }: TabProps) => {
                     }
                 }
             }
-            if (!ctx.minY || !ctx.maxY) return;
+
+            if (!ctx.minY && !ctx.maxY) return;
+
             const newTop = Math.max(
                 Math.min(ctx.firstModalTop + event.translationY, ctx.maxY),
                 ctx.minY,
             );
-            modalTop.value = newTop;
-            modalHeight.value = Math.max(
-                modalMaxHeight * (1 - (newTop - top) / modalMinifiedTop) -
-                    (TAB_BAR_HEIGHT + bottom) *
-                        ((newTop - top) / modalMinifiedTop),
+
+            const newHeight = Math.max(
+                MINIFIED_MODAL_HEIGHT +
+                    modalMaxHeight *
+                        (1 - (newTop - top) / (modalMinifiedTop - top)),
                 MINIFIED_MODAL_HEIGHT,
             );
+
+            modalHeight.value = newHeight;
+            modalTop.value = newTop;
         },
         onEnd: (event, ctx) => {
             ctx.animating = false;
@@ -153,7 +152,7 @@ export default ({ navigation }: TabProps) => {
                 // 사라지게 한다.
                 if (
                     event.translationY > 0 &&
-                    event.translationY > (TAB_BAR_HEIGHT + bottom) * 0.3
+                    event.translationY > (TAB_BAR_HEIGHT + bottom) * 0.1
                 ) {
                     modalTop.value = withTiming(
                         screen.height,
@@ -172,7 +171,7 @@ export default ({ navigation }: TabProps) => {
                 // 최대화한다.
                 else if (
                     event.translationY < 0 &&
-                    -event.translationY > modalMaxHeight * 0.3
+                    -event.translationY > modalMaxHeight * 0.1
                 ) {
                     modalTop.value = withTiming(top);
                     modalHeight.value = withTiming(modalMaxHeight);
