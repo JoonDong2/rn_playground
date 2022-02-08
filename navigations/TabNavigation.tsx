@@ -2,6 +2,8 @@ import {
     BottomTabBarProps,
     createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
+import { RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useCallback, useEffect, useState } from 'react';
 import { TouchableWithoutFeedback, View } from 'react-native';
 import {
@@ -10,6 +12,7 @@ import {
 } from 'react-native-gesture-handler';
 import Animated, {
     Easing,
+    runOnJS,
     useAnimatedGestureHandler,
     useAnimatedStyle,
     useSharedValue,
@@ -19,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { screen, window } from '../Constants';
 import KakaoWebtoon from '../screens/KakaoWebtoon';
 import Zoom from '../screens/Zoom';
+import { MainStackParamList } from './StackNavigation';
 
 export type RootTabNavigationProp = {
     Zoom: {
@@ -31,26 +35,32 @@ export type RootTabNavigationProp = {
 const TAB_BAR_HEIGHT = 60;
 const MINIFIED_MODAL_HEIGHT = 60;
 
+let modalMaxHeight = 0;
 let modalMinifiedTop = 0;
 
 const Tab = createBottomTabNavigator<RootTabNavigationProp>();
 
-export default () => {
+type TabNavigationProp = StackNavigationProp<MainStackParamList, 'Tab'>;
+type TabRouteProp = RouteProp<MainStackParamList, 'Tab'>;
+
+interface TabProps {
+    navigation: TabNavigationProp;
+    route: TabRouteProp;
+}
+
+export default ({ navigation }: TabProps) => {
     const { top, bottom } = useSafeAreaInsets();
     const [modalVisible, setModalVisible] = useState(false);
+
+    modalMaxHeight = window.height - top;
+    modalMinifiedTop =
+        window.height - bottom - TAB_BAR_HEIGHT - MINIFIED_MODAL_HEIGHT;
 
     // screen.height: 사라진 상태 (modalVisible: false)
     // modalMinifiedTop: 최소화 상태
     // top: 풀스크린 상태
     const modalTop = useSharedValue<number>(screen.height);
-
-    const [modalMaxHeight, setModalMaxHeight] = useState(0);
-
-    useEffect(() => {
-        setModalMaxHeight(window.height - top);
-        modalMinifiedTop =
-            window.height - bottom - TAB_BAR_HEIGHT - MINIFIED_MODAL_HEIGHT;
-    }, [top, bottom]);
+    const modalHeight = useSharedValue<number>(modalMaxHeight);
 
     const tabBarStyle = useAnimatedStyle(() => {
         return {
@@ -65,10 +75,24 @@ export default () => {
 
     const modalStyle = useAnimatedStyle(() => {
         return {
-            height: 100,
+            height: modalHeight.value,
             top: modalTop.value,
+            // transform: [{
+            //     translateY:(TAB_BAR_HEIGHT + bottom) * ((modalTop.value - top) / MINIFIED_MODAL_HEIGHT)
+            // }],
         };
     });
+
+    const openModal = useCallback(() => {
+        setModalVisible(true);
+        modalHeight.value = modalMaxHeight;
+        modalTop.value = withTiming(top, {
+            duration: 650,
+            easing: Easing.out(Easing.exp),
+        });
+    }, [modalHeight, modalTop, top]);
+
+    const closeModal = useCallback(() => setModalVisible(false), []);
 
     const onModalGestureEvent = useAnimatedGestureHandler<
         PanGestureHandlerGestureEvent,
@@ -85,22 +109,95 @@ export default () => {
             ctx.firstModalTop = modalTop.value;
         },
         onActive: (event, ctx) => {
-            // console.log("여기2", ctx.firstModalTop, translateY);
-            modalTop.value = ctx.firstModalTop + event.translationY;
+            if (!ctx.minY || !ctx.maxY) {
+                // 풀스크린 상태에서 제스쳐를 시작한 경우
+                if (ctx.firstModalTop === top) {
+                    ctx.minY = top;
+                    ctx.maxY = modalMinifiedTop;
+                }
+                // 최소화 상태에서 제스쳐를 시작한 경우
+                else if (ctx.firstModalTop === modalMinifiedTop) {
+                    // 올리는 제스쳐
+                    if (event.translationY < 0) {
+                        ctx.minY = top;
+                        ctx.maxY = modalMinifiedTop;
+                    }
+                    // 내리는 제스쳐
+                    else if (event.translationY > 0) {
+                        ctx.minY = modalMinifiedTop;
+                        ctx.maxY = screen.height + TAB_BAR_HEIGHT;
+                    }
+                }
+            }
+            if (!ctx.minY || !ctx.maxY) return;
+            const newTop = Math.max(
+                Math.min(ctx.firstModalTop + event.translationY, ctx.maxY),
+                ctx.minY,
+            );
+            modalTop.value = newTop;
+            modalHeight.value = Math.max(
+                modalMaxHeight * (1 - (newTop - top) / modalMinifiedTop) -
+                    (TAB_BAR_HEIGHT + bottom) *
+                        ((newTop - top) / modalMinifiedTop),
+                MINIFIED_MODAL_HEIGHT,
+            );
         },
         onEnd: (event, ctx) => {
             ctx.animating = false;
+            ctx.minY = 0;
+            ctx.maxY = 0;
+
+            // 최소화 상태에서 제스쳐를 시작한 경우
+            if (ctx.firstModalTop === modalMinifiedTop) {
+                // 내리는 제스쳐
+                // 사라지게 한다.
+                if (
+                    event.translationY > 0 &&
+                    event.translationY > (TAB_BAR_HEIGHT + bottom) * 0.3
+                ) {
+                    modalTop.value = withTiming(
+                        screen.height,
+                        undefined,
+                        finished => {
+                            if (!finished) return;
+                            runOnJS(closeModal)();
+                        },
+                    );
+                }
+                // 복원한다.
+                else if (event.translationY > 0) {
+                    modalTop.value = withTiming(modalMinifiedTop);
+                }
+                // 올리는 제스쳐
+                // 최대화한다.
+                else if (
+                    event.translationY < 0 &&
+                    -event.translationY > modalMaxHeight * 0.3
+                ) {
+                    modalTop.value = withTiming(top);
+                    modalHeight.value = withTiming(modalMaxHeight);
+                }
+                // 복원한다.
+                else if (event.translationY < 0) {
+                    modalTop.value = withTiming(modalMinifiedTop);
+                    modalHeight.value = withTiming(MINIFIED_MODAL_HEIGHT);
+                }
+            }
+            // 최대화 상태에서 제스쳐를 시작한 경우
+            else if (ctx.firstModalTop === top) {
+                // 최소화한다.
+                if (event.absoluteY > modalMaxHeight * 0.3) {
+                    modalTop.value = withTiming(modalMinifiedTop);
+                    modalHeight.value = withTiming(MINIFIED_MODAL_HEIGHT);
+                }
+                // 복원한다.
+                else {
+                    modalTop.value = withTiming(top);
+                    modalHeight.value = withTiming(modalMaxHeight);
+                }
+            }
         },
     });
-
-    const openModal = useCallback(() => {
-        modalTop.value = withTiming(top, {
-            duration: 500,
-            easing: Easing.out(Easing.exp),
-        });
-    }, [modalTop, top]);
-
-    const closeModal = useCallback(() => {}, []);
 
     return (
         <View
@@ -188,18 +285,20 @@ export default () => {
                 />
                 <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
             </Tab.Navigator>
-            <PanGestureHandler onGestureEvent={onModalGestureEvent}>
-                <Animated.View
-                    style={[
-                        modalStyle,
-                        {
-                            position: 'absolute',
-                            width: window.width,
-                            backgroundColor: 'red',
-                            height: 60,
-                        },
-                    ]}></Animated.View>
-            </PanGestureHandler>
+            {modalVisible && (
+                <PanGestureHandler onGestureEvent={onModalGestureEvent}>
+                    <Animated.View
+                        style={[
+                            modalStyle,
+                            {
+                                position: 'absolute',
+                                width: window.width,
+                                backgroundColor: 'red',
+                            },
+                        ]}
+                    />
+                </PanGestureHandler>
+            )}
         </View>
     );
 };
