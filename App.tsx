@@ -5,7 +5,8 @@ import { LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 LogBox.ignoreLogs([
-    "[react-native-gesture-handler] Seems like you\'re using an old API with gesture components, check out new Gestures system!",
+    "[react-native-gesture-handler] Seems like you're using an old API with gesture components, check out new Gestures system!",
+    'Non-serializable values were found in the navigation state.',
 ]);
 
 export default () => {
@@ -15,5 +16,5 @@ export default () => {
                 <StackNavigation />
             </NavigationContainer>
         </SafeAreaProvider>
-    )
-}
+    );
+};
