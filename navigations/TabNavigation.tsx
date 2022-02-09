@@ -86,10 +86,23 @@ export default ({ navigation }: TabProps) => {
         return {
             transform: [
                 {
-                    translateY: 0,
+                    translateY:
+                        (MINIFIED_MODAL_HEIGHT + TAB_BAR_HEIGHT + bottom) *
+                        Math.max(
+                            (modalMinifiedTop - modalTop.value) /
+                                (modalMinifiedTop - top),
+                            0,
+                        ),
                 },
             ],
-            opacity: 1,
+            opacity:
+                1 -
+                2.5 *
+                    Math.max(
+                        (modalMinifiedTop - modalTop.value) /
+                            (modalMinifiedTop - top),
+                        0,
+                    ),
         };
     });
 
@@ -97,6 +110,12 @@ export default ({ navigation }: TabProps) => {
         return {
             height: modalHeight.value,
             top: modalTop.value,
+            opacity:
+                (1.1 *
+                    (MINIFIED_MODAL_HEIGHT +
+                        modalMinifiedTop -
+                        modalTop.value)) /
+                MINIFIED_MODAL_HEIGHT,
         };
     });
 
@@ -223,7 +242,6 @@ export default ({ navigation }: TabProps) => {
             style={{
                 flex: 1,
                 backgroundColor: '#ffffff',
-                paddingBottom: bottom,
             }}>
             <Tab.Navigator
                 screenOptions={{
@@ -243,14 +261,31 @@ export default ({ navigation }: TabProps) => {
                 <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
             </Tab.Navigator>
 
+            {modalVisible && (
+                <PanGestureHandler onGestureEvent={onModalGestureEvent}>
+                    <Animated.View
+                        style={[
+                            modalStyle,
+                            {
+                                position: 'absolute',
+                                width: window.width,
+                                backgroundColor: 'red',
+                            },
+                        ]}
+                    />
+                </PanGestureHandler>
+            )}
+
             <Animated.View
                 style={[
                     tabBarStyle,
                     {
-                        height: TAB_BAR_HEIGHT,
+                        height: TAB_BAR_HEIGHT + bottom,
+                        paddingBottom: bottom,
                         flexDirection: 'row',
                         borderTopColor: '#000000',
                         borderTopWidth: 0.5,
+                        backgroundColor: '#ffffff',
                     },
                 ]}>
                 {tabs.map((tab, index) => {
@@ -293,21 +328,6 @@ export default ({ navigation }: TabProps) => {
                     );
                 })}
             </Animated.View>
-
-            {modalVisible && (
-                <PanGestureHandler onGestureEvent={onModalGestureEvent}>
-                    <Animated.View
-                        style={[
-                            modalStyle,
-                            {
-                                position: 'absolute',
-                                width: window.width,
-                                backgroundColor: 'red',
-                            },
-                        ]}
-                    />
-                </PanGestureHandler>
-            )}
         </View>
     );
 };
