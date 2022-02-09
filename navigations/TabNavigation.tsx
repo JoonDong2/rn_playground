@@ -38,7 +38,10 @@ const MINIFIED_MODAL_HEIGHT = 60;
 let modalMaxHeight = 0;
 let modalMinifiedTop = 0;
 
-const tabs = [
+const tabs: {
+    name: 'Zoom' | 'KakaoWebtoon';
+    label: string;
+}[] = [
     {
         name: 'Zoom',
         label: 'Zoom 클론',
@@ -252,13 +255,12 @@ export default ({ navigation }: TabProps) => {
                 ]}>
                 {tabs.map((tab, index) => {
                     const isFocused = currentIndex === index;
-                    const isZoom = index === 0;
 
                     const onPress = () => {
                         setCurrentIndex(index);
                         navigation.navigate(
-                            isZoom ? 'Zoom' : 'KakaoWebtoon',
-                            isZoom
+                            tab.name,
+                            index === 0
                                 ? {
                                       openModal,
                                       closeModal,
