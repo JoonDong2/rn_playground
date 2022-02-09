@@ -1,8 +1,9 @@
 import {
     BottomTabBarProps,
+    BottomTabNavigationProp,
     createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
-import { RouteProp } from '@react-navigation/native';
+import { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useCallback, useEffect, useState } from 'react';
 import { TouchableWithoutFeedback, View } from 'react-native';
@@ -11,7 +12,6 @@ import {
     PanGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
 import Animated, {
-    Easing,
     runOnJS,
     useAnimatedGestureHandler,
     useAnimatedStyle,
@@ -38,17 +38,34 @@ const MINIFIED_MODAL_HEIGHT = 60;
 let modalMaxHeight = 0;
 let modalMinifiedTop = 0;
 
+const tabs = [
+    {
+        name: 'Zoom',
+        label: 'Zoom 클론',
+    },
+    {
+        name: 'KakaoWebtoon',
+        label: '카카오웹툰 클론',
+    },
+];
+
 const Tab = createBottomTabNavigator<RootTabNavigationProp>();
 
-type TabNavigationProp = StackNavigationProp<MainStackParamList, 'Tab'>;
 type TabRouteProp = RouteProp<MainStackParamList, 'Tab'>;
 
-interface TabProps {
-    navigation: TabNavigationProp;
+type TabNavigationProp = CompositeNavigationProp<
+    StackNavigationProp<MainStackParamList, 'Tab'>,
+    BottomTabNavigationProp<RootTabNavigationProp, 'Zoom'>
+>;
+
+type TabProps = {
     route: TabRouteProp;
-}
+    navigation: TabNavigationProp;
+};
 
 export default ({ navigation }: TabProps) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+
     const { top, bottom } = useSafeAreaInsets();
     const [modalVisible, setModalVisible] = useState(false);
 
@@ -206,73 +223,11 @@ export default ({ navigation }: TabProps) => {
                 paddingBottom: bottom,
             }}>
             <Tab.Navigator
-                screenOptions={{ headerShown: false }}
-                tabBar={({
-                    state,
-                    descriptors,
-                    navigation,
-                }: BottomTabBarProps) => {
-                    return (
-                        <Animated.View
-                            style={[
-                                tabBarStyle,
-                                {
-                                    height: TAB_BAR_HEIGHT,
-                                    flexDirection: 'row',
-                                    borderTopColor: '#000000',
-                                    borderTopWidth: 0.5,
-                                },
-                            ]}>
-                            {state.routes.map((route, index) => {
-                                const { options } = descriptors[route.key];
-                                const label =
-                                    options.tabBarLabel !== undefined
-                                        ? options.tabBarLabel
-                                        : options.title !== undefined
-                                        ? options.title
-                                        : route.name;
-
-                                const isFocused = state.index === index;
-
-                                const onPress = () => {
-                                    const event = navigation.emit({
-                                        type: 'tabPress',
-                                        target: route.key,
-                                        canPreventDefault: true,
-                                    });
-
-                                    if (!isFocused && !event.defaultPrevented) {
-                                        navigation.navigate(route.name, {
-                                            merge: true,
-                                        });
-                                    }
-                                };
-
-                                return (
-                                    <TouchableWithoutFeedback
-                                        onPress={onPress}
-                                        key={route.name}>
-                                        <Animated.View
-                                            style={{
-                                                height: TAB_BAR_HEIGHT,
-                                                flex: 1,
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
-                                            }}>
-                                            <Animated.Text
-                                                style={{
-                                                    fontWeight: isFocused
-                                                        ? 'bold'
-                                                        : 'normal',
-                                                }}>
-                                                {label}
-                                            </Animated.Text>
-                                        </Animated.View>
-                                    </TouchableWithoutFeedback>
-                                );
-                            })}
-                        </Animated.View>
-                    );
+                screenOptions={{
+                    headerShown: false,
+                    tabBarStyle: {
+                        display: 'none',
+                    },
                 }}>
                 <Tab.Screen
                     name="Zoom"
@@ -284,6 +239,59 @@ export default ({ navigation }: TabProps) => {
                 />
                 <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
             </Tab.Navigator>
+
+            <Animated.View
+                style={[
+                    tabBarStyle,
+                    {
+                        height: TAB_BAR_HEIGHT,
+                        flexDirection: 'row',
+                        borderTopColor: '#000000',
+                        borderTopWidth: 0.5,
+                    },
+                ]}>
+                {tabs.map((tab, index) => {
+                    const isFocused = currentIndex === index;
+                    const isZoom = index === 0;
+
+                    const onPress = () => {
+                        setCurrentIndex(index);
+                        navigation.navigate(
+                            isZoom ? 'Zoom' : 'KakaoWebtoon',
+                            isZoom
+                                ? {
+                                      openModal,
+                                      closeModal,
+                                  }
+                                : undefined,
+                        );
+                    };
+
+                    return (
+                        <TouchableWithoutFeedback
+                            onPress={onPress}
+                            key={tab.name}>
+                            <Animated.View
+                                style={{
+                                    height: TAB_BAR_HEIGHT,
+                                    flex: 1,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                }}>
+                                <Animated.Text
+                                    style={{
+                                        fontWeight: isFocused
+                                            ? 'bold'
+                                            : 'normal',
+                                    }}>
+                                    {tab.label}
+                                </Animated.Text>
+                            </Animated.View>
+                        </TouchableWithoutFeedback>
+                    );
+                })}
+            </Animated.View>
+
             {modalVisible && (
                 <PanGestureHandler onGestureEvent={onModalGestureEvent}>
                     <Animated.View
