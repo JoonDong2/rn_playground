@@ -205,7 +205,7 @@ export default ({ navigation }: TabProps) => {
             // 최대화 상태에서 제스쳐를 시작한 경우
             else if (ctx.firstModalTop === top) {
                 // 최소화한다.
-                if (event.absoluteY > modalMaxHeight * 0.3) {
+                if (event.absoluteY > modalMaxHeight * 0.2) {
                     modalTop.value = withTiming(modalMinifiedTop);
                     modalHeight.value = withTiming(MINIFIED_MODAL_HEIGHT);
                 }
