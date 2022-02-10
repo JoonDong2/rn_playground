@@ -1,11 +1,10 @@
 import {
-    BottomTabBarProps,
     BottomTabNavigationProp,
     createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { TouchableWithoutFeedback, View } from 'react-native';
 import {
     PanGestureHandler,
@@ -27,7 +26,6 @@ import { MainStackParamList } from './StackNavigation';
 export type RootTabNavigationProp = {
     Zoom: {
         openModal: () => void;
-        closeModal: () => void;
     };
     KakaoWebtoon: undefined;
 };
