@@ -25,7 +25,7 @@ import { MainStackParamList } from './StackNavigation';
 
 export type RootTabNavigationProp = {
     Zoom: {
-        openModal: () => void;
+        openChatModal: () => void;
     };
     KakaoWebtoon: undefined;
 };
@@ -117,7 +117,7 @@ export default ({ navigation }: TabProps) => {
         };
     });
 
-    const openModal = useCallback(() => {
+    const openChatModal = useCallback(() => {
         setModalVisible(true);
         modalHeight.value = modalMaxHeight;
         modalTop.value = withTiming(top);
@@ -252,8 +252,7 @@ export default ({ navigation }: TabProps) => {
                     name="Zoom"
                     component={Zoom}
                     initialParams={{
-                        openModal,
-                        closeModal,
+                        openChatModal,
                     }}
                 />
                 <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
@@ -295,8 +294,7 @@ export default ({ navigation }: TabProps) => {
                             tab.name,
                             index === 0
                                 ? {
-                                      openModal,
-                                      closeModal,
+                                      openChatModal,
                                   }
                                 : undefined,
                         );
