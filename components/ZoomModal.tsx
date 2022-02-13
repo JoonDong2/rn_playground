@@ -25,7 +25,7 @@ export default ({
     style,
 }: ZoomModalProps) => {
     useEffect(() => {
-
+        
     }, []);
     return (
         <Animated.View
