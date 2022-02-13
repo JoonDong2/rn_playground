@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
 import Animated, { SharedValue } from 'react-native-reanimated';
 import { Socket } from 'socket.io-client';
@@ -24,6 +24,9 @@ export default ({
     modalMinifiedTop,
     style,
 }: ZoomModalProps) => {
+    useEffect(() => {
+
+    }, []);
     return (
         <Animated.View
             style={[
