@@ -23,6 +23,7 @@ import KakaoWebtoon from '../screens/KakaoWebtoon';
 import Zoom from '../screens/Zoom';
 import { MainStackParamList } from './StackNavigation';
 import { Socket } from 'socket.io-client';
+import ZoomModal from '../components/ZoomModal';
 
 export type RootTabNavigationProp = {
     Zoom: {
@@ -71,15 +72,14 @@ type TabProps = {
 };
 
 export default ({ navigation }: TabProps) => {
-    const [roomInfo, setRoomInfo] = useState<{
-        socket: Socket | undefined;
-        roomName: string | undefined;
-        type: 'owner' | 'visitor' | undefined;
-    }>({
-        socket: undefined,
-        roomName: undefined,
-        type: undefined,
-    });
+    const [roomInfo, setRoomInfo] = useState<
+        | {
+              socket: Socket;
+              roomName: string;
+              type: 'owner' | 'visitor';
+          }
+        | undefined
+    >(undefined);
 
     const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -135,23 +135,17 @@ export default ({ navigation }: TabProps) => {
 
     const removeChatModal = useCallback(
         (local?: boolean) => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { type, roomName, socket } = roomInfo;
-            setModalVisible(false);
-            if (type && roomName && !local) {
-                socket?.emit(`exit_${type}`, { roomName });
-            }
+            // setModalVisible(false);
+            // if (type && roomName && !local) {
+            //     socket?.emit(`exit_${type}`, { roomName });
+            // }
             modalTop.value = screen.height;
             modalHeight.value = modalMaxHeight;
-            socket?.disconnect();
+            roomInfo?.socket?.disconnect();
 
-            setRoomInfo({
-                socket: undefined,
-                roomName: undefined,
-                type: undefined,
-            });
+            setRoomInfo(undefined);
         },
-        [modalHeight, modalTop, roomInfo],
+        [modalHeight, modalTop],
     );
 
     const closeChatModal = useCallback(
@@ -178,12 +172,13 @@ export default ({ navigation }: TabProps) => {
             roomName: string;
             type: 'visitor' | 'owner';
         }) => {
+            // if (!modalMaxHeight || !modalMinifiedTop) return;
             setRoomInfo({
                 socket: connectedSocket,
                 roomName: connectedRoomName,
                 type: connectedType,
             });
-            setModalVisible(true);
+            // setModalVisible(true);
             modalHeight.value = modalMaxHeight;
             modalTop.value = withTiming(top);
         },
@@ -324,7 +319,7 @@ export default ({ navigation }: TabProps) => {
                 <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
             </Tab.Navigator>
 
-            {modalVisible && (
+            {roomInfo && (
                 <PanGestureHandler onGestureEvent={onModalGestureEvent}>
                     <Animated.View
                         style={[
@@ -332,10 +327,16 @@ export default ({ navigation }: TabProps) => {
                             {
                                 position: 'absolute',
                                 width: window.width,
-                                backgroundColor: 'red',
                             },
-                        ]}
-                    />
+                        ]}>
+                        <ZoomModal
+                            {...roomInfo}
+                            modalHeight={modalHeight}
+                            modalTop={modalTop}
+                            modalMaxHeight={modalMaxHeight}
+                            modalMinifiedTop={modalMinifiedTop}
+                        />
+                    </Animated.View>
                 </PanGestureHandler>
             )}
 

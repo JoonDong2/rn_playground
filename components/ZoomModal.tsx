@@ -1,14 +1,29 @@
 import React from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
 import Animated, { SharedValue } from 'react-native-reanimated';
-import { MODAL_STATUS } from '../navigations/TabNavigation';
+import { Socket } from 'socket.io-client';
 
 interface ZoomModalProps {
-    modalProgress: SharedValue<number>;
+    socket: Socket | undefined;
+    roomName: string | undefined;
+    type: 'owner' | 'visitor' | undefined;
+    modalTop: SharedValue<number>;
+    modalHeight: SharedValue<number>;
+    modalMaxHeight: number;
+    modalMinifiedTop: number;
     style?: StyleProp<Animated.AnimateStyle<StyleProp<ViewStyle>>>;
 }
 
-export default ({ modalProgress, style }: ZoomModalProps) => {
+export default ({
+    socket,
+    roomName,
+    type,
+    modalTop,
+    modalHeight,
+    modalMaxHeight,
+    modalMinifiedTop,
+    style,
+}: ZoomModalProps) => {
     return (
         <Animated.View
             style={[
