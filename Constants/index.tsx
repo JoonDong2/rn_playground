@@ -6,6 +6,6 @@ export const screen = Dimensions.get('screen');
 export const isAndroid = Platform.OS === 'android';
 export const isIOS = Platform.OS === 'ios';
 
-const END_POINT = 'c652-2001-4430-506c-272a-accb-7fa3-f7b8-65d0.ngrok.io';
-export const CHAT_LIST_END_POINT = 'https://' + END_POINT + '/webrtc/rooms';
-export const WS_END_POINT = 'ws://' + END_POINT + '/webrtc/socket';
+const END_POINT = 'https://fe62-2001-4430-506c-272a-f527-6f16-90-4012.ngrok.io';
+export const CHAT_LIST_END_POINT = END_POINT + '/webrtc/rooms';
+export const WS_END_POINT = END_POINT + '/webrtc/socket';

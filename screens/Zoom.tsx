@@ -103,30 +103,25 @@ export default ({
             ...texts,
             type: modalVisible === 'create' ? 'owner' : 'visitor',
         });
-
-        socket.on('connect', () => {
-            console.log('connect');
-        });
         socket.on('disconnect', () => {
-            console.log('disconnect');
-        });
-        socket.on('error', e => {
-            console.log('error', e);
+            socket.removeAllListeners();
         });
         socket.on('disconnect_message', (message: string) => {
             Alert.alert('오류', message);
+            socket.removeAllListeners();
         });
-
-        Keyboard.dismiss();
-        setModalVisible(undefined);
-        setTimeout(() => {
-            setTexts({
-                nickname: '',
-                roomName: '',
-                password: '',
-            });
-            openChatModal();
-        }, 250);
+        socket.on('connect_successful', () => {
+            Keyboard.dismiss();
+            setModalVisible(undefined);
+            setTimeout(() => {
+                setTexts({
+                    nickname: '',
+                    roomName: '',
+                    password: '',
+                });
+                openChatModal();
+            }, 250);
+        });
     }, [texts, modalVisible, openChatModal]);
 
     const dismissModal = useCallback(() => {
@@ -355,13 +350,14 @@ export default ({
                     </>
                 </KeyboardAvoidingView>
             </Modal>
-            {!chatList && loading ? (
+            {loading && (
                 <ActivityIndicator
                     style={{ position: 'absolute' }}
                     size="large"
                     color="#aaaaaa"
                 />
-            ) : (
+            )}
+            {chatList?.length === 0 && !loading && (
                 <Text style={{ position: 'absolute' }}>방이 없습니다.</Text>
             )}
         </View>
