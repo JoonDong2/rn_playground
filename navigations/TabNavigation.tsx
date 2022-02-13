@@ -22,10 +22,12 @@ import { screen, window } from '../Constants';
 import KakaoWebtoon from '../screens/KakaoWebtoon';
 import Zoom from '../screens/Zoom';
 import { MainStackParamList } from './StackNavigation';
+import { Socket } from 'socket.io-client';
 
 export type RootTabNavigationProp = {
     Zoom: {
-        openChatModal: () => void;
+        openChatModal: (socket: Socket) => void;
+        closeChatModal: () => void;
     };
     KakaoWebtoon: undefined;
 };
@@ -63,6 +65,8 @@ type TabProps = {
     route: TabRouteProp;
     navigation: TabNavigationProp;
 };
+
+let socket: Socket | undefined;
 
 export default ({ navigation }: TabProps) => {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -117,13 +121,27 @@ export default ({ navigation }: TabProps) => {
         };
     });
 
-    const openChatModal = useCallback(() => {
-        setModalVisible(true);
-        modalHeight.value = modalMaxHeight;
-        modalTop.value = withTiming(top);
-    }, [modalHeight, modalTop, top]);
+    const openChatModal = useCallback(
+        (connectedSocket: Socket) => {
+            socket = connectedSocket;
+            setModalVisible(true);
+            modalHeight.value = modalMaxHeight;
+            modalTop.value = withTiming(top);
+        },
+        [modalHeight, modalTop, top],
+    );
 
-    const closeModal = useCallback(() => setModalVisible(false), []);
+    const closeChatModal = useCallback(() => {
+        modalTop.value = withTiming(screen.height, undefined, isFinished => {
+            if (!isFinished) return;
+            setModalVisible(false);
+        });
+    }, [modalTop]);
+
+    const removeChatModal = useCallback(() => {
+        setModalVisible(false);
+        socket?.disconnect();
+    }, []);
 
     const onModalGestureEvent = useAnimatedGestureHandler<
         PanGestureHandlerGestureEvent,
@@ -196,7 +214,7 @@ export default ({ navigation }: TabProps) => {
                         undefined,
                         finished => {
                             if (!finished) return;
-                            runOnJS(closeModal)();
+                            runOnJS(removeChatModal)();
                         },
                     );
                 }
@@ -253,6 +271,7 @@ export default ({ navigation }: TabProps) => {
                     component={Zoom}
                     initialParams={{
                         openChatModal,
+                        closeChatModal,
                     }}
                 />
                 <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
@@ -295,6 +314,7 @@ export default ({ navigation }: TabProps) => {
                             index === 0
                                 ? {
                                       openChatModal,
+                                      closeChatModal,
                                   }
                                 : undefined,
                         );

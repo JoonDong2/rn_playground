@@ -9,6 +9,7 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Modal,
+    RefreshControl,
     Text,
     TextInput,
     TouchableOpacity,
@@ -21,6 +22,7 @@ import ChatItem from '../components/ChatItem';
 import { isAndroid, CHAT_LIST_END_POINT, screen } from '../Constants';
 import { MainStackParamList } from '../navigations/StackNavigation';
 import { RootTabNavigationProp } from '../navigations/TabNavigation';
+import axios from 'axios';
 
 type ZoomRouteProp = RouteProp<RootTabNavigationProp, 'Zoom'>;
 
@@ -41,10 +43,13 @@ type ZoomProps = {
 
 export default ({
     route: {
-        params: { openChatModal },
+        params: { openChatModal, closeChatModal },
     },
 }: ZoomProps) => {
     const { top } = useSafeAreaInsets();
+
+    const [isInChat, setIsInChat] = useState(false);
+    const [enteringLoading, setEnteringLoading] = useState(false);
 
     // (!chatList && loading)인 경우만 스피너가 나타난다.
     const [loading, setLoading] = useState(false);
@@ -54,7 +59,7 @@ export default ({
 
     const [keyboardDidShow, setKeybaordDidShow] = useState(false);
     const [modalVisible, setModalVisible] = useState<
-        'enterFreeRoom' | 'enterPrivateRoom' | 'create' | undefined
+        'enter' | 'create' | undefined
     >(undefined);
 
     const [texts, setTexts] = useState({
@@ -99,18 +104,24 @@ export default ({
         const { nickname, roomName } = texts;
         if (!nickname || !roomName) return;
 
+        setEnteringLoading(true);
         const socket = getSocket({
             ...texts,
             type: modalVisible === 'create' ? 'owner' : 'visitor',
         });
         socket.on('disconnect', () => {
+            setEnteringLoading(false);
             socket.removeAllListeners();
+            setIsInChat(false);
         });
         socket.on('disconnect_message', (message: string) => {
+            setEnteringLoading(false);
             Alert.alert('오류', message);
             socket.removeAllListeners();
+            setIsInChat(false);
         });
         socket.on('connect_successful', () => {
+            setEnteringLoading(false);
             Keyboard.dismiss();
             setModalVisible(undefined);
             setTimeout(() => {
@@ -119,7 +130,8 @@ export default ({
                     roomName: '',
                     password: '',
                 });
-                openChatModal();
+                setIsInChat(true);
+                openChatModal(socket);
             }, 250);
         });
     }, [texts, modalVisible, openChatModal]);
@@ -136,12 +148,12 @@ export default ({
         }
     }, [keyboardDidShow]);
 
-    const getChatList = useCallback(async () => {
-        setLoading(true);
+    const getChatList = useCallback(async (disableLoading?: boolean) => {
+        setLoading(!disableLoading);
         try {
-            const res = await fetch(CHAT_LIST_END_POINT);
+            const res = await axios.get(CHAT_LIST_END_POINT);
             if (res.status !== 200) throw new Error();
-            const chatList = await res.json();
+            const chatList = await res.data;
             setChatList(chatList);
         } catch (e) {
             setChatList([]);
@@ -167,9 +179,13 @@ export default ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const onPress = useCallback((item: RoomProps) => {
-        console.log(item);
-    }, []);
+    const onPress = useCallback(
+        (item: RoomProps) => {
+            if (isInChat) return;
+            console.log(item);
+        },
+        [isInChat],
+    );
 
     const renderItem = useCallback(
         ({ item }: { item: RoomProps }) => {
@@ -178,43 +194,56 @@ export default ({
         [onPress],
     );
 
+    const [refreshing, setRefreshing] = useState(false);
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await getChatList(true);
+        setRefreshing(false);
+    }, [getChatList]);
+
     return (
         <View
             style={{
-                paddingTop: top,
                 flex: 1,
                 justifyContent: 'center',
                 alignItems: 'center',
             }}>
-            <TouchableOpacity
-                onPress={getChatList}
-                style={{
-                    width: screen.width,
-                    height: 50,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderBottomWidth: 0.5,
-                    borderBottomColor: '#aaaaaa',
-                }}>
-                <Text>새로고침</Text>
-            </TouchableOpacity>
             <FlatList
-                style={{ flex: 1 }}
+                style={{ paddingTop: top, flex: 1, width: screen.width }}
                 data={chatList}
                 renderItem={renderItem}
                 keyExtractor={(item: RoomProps) => item.roomName}
+                bounces
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                    />
+                }
             />
             <TouchableOpacity
                 style={{
-                    width: screen.width,
+                    position: 'absolute',
+                    bottom: 20,
+                    right: 20,
+                    width: 50,
                     height: 50,
+                    borderRadius: 25,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    borderTopWidth: 0.5,
-                    borderTopColor: '#aaaaaa',
+                    backgroundColor: '#007fff',
                 }}
+                disabled={isInChat}
                 onPress={createChat}>
-                <Text>방 생성</Text>
+                <Text
+                    style={{
+                        color: '#ffffff',
+                        fontSize: 35,
+                        includeFontPadding: false,
+                        paddingBottom: isAndroid ? 0 : 3,
+                    }}>
+                    +
+                </Text>
             </TouchableOpacity>
             <Modal transparent visible={!!modalVisible} animationType="fade">
                 <KeyboardAvoidingView
@@ -317,10 +346,7 @@ export default ({
                                     style={{
                                         flex: 1,
                                         textAlign: 'center',
-                                        color:
-                                            modalVisible === 'enterPrivateRoom'
-                                                ? '#000000'
-                                                : '#aaaaaa',
+                                        color: '#000000',
                                         padding: 0,
                                         includeFontPadding: false,
                                     }}
@@ -332,6 +358,7 @@ export default ({
                             </View>
                             <TouchableOpacity
                                 onPress={openChat}
+                                disabled={enteringLoading}
                                 style={{
                                     width: 250,
                                     height: 30,
@@ -340,11 +367,18 @@ export default ({
                                     alignItems: 'center',
                                     backgroundColor: '#007fff',
                                 }}>
-                                <Text style={{ color: '#ffffff' }}>
-                                    {modalVisible === 'create'
-                                        ? '방 생성'
-                                        : '입장'}
-                                </Text>
+                                {!enteringLoading ? (
+                                    <Text style={{ color: '#ffffff' }}>
+                                        {modalVisible === 'create'
+                                            ? '방 생성'
+                                            : '입장'}
+                                    </Text>
+                                ) : (
+                                    <ActivityIndicator
+                                        size="small"
+                                        color="#ffffff"
+                                    />
+                                )}
                             </TouchableOpacity>
                         </View>
                     </>
