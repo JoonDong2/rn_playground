@@ -4,6 +4,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
+    FlatList,
     Keyboard,
     KeyboardAvoidingView,
     Modal,
@@ -13,7 +15,10 @@ import {
     TouchableWithoutFeedback,
     View,
 } from 'react-native';
-import { isAndroid, screen } from '../Constants';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getSocket } from '../api/socket';
+import ChatItem from '../components/ChatItem';
+import { isAndroid, CHAT_LIST_END_POINT, screen } from '../Constants';
 import { MainStackParamList } from '../navigations/StackNavigation';
 import { RootTabNavigationProp } from '../navigations/TabNavigation';
 
@@ -24,10 +29,9 @@ type ZoomNavigationProp = CompositeNavigationProp<
     BottomTabNavigationProp<RootTabNavigationProp, 'Zoom'>
 >;
 
-interface RoomProps {
+export interface RoomProps {
     roomName: string;
     peerNickname: string;
-    roomId?: boolean;
 }
 
 type ZoomProps = {
@@ -40,6 +44,8 @@ export default ({
         params: { openChatModal },
     },
 }: ZoomProps) => {
+    const { top } = useSafeAreaInsets();
+
     // (!chatList && loading)인 경우만 스피너가 나타난다.
     const [loading, setLoading] = useState(false);
     const [chatList, setChatList] = useState<RoomProps[] | undefined>(
@@ -92,14 +98,36 @@ export default ({
     const openChat = useCallback(() => {
         const { nickname, roomName } = texts;
         if (!nickname || !roomName) return;
-        // TODO: 닉네임 중복체크
-        // TODO: 비밀번호가 있는 방이라면, 사용자가 입력한 비밀번호를 사용해서 roomId 얻어오기
+
+        const socket = getSocket({
+            ...texts,
+            type: modalVisible === 'create' ? 'owner' : 'visitor',
+        });
+
+        socket.on('connect', () => {
+            console.log('connect');
+        });
+        socket.on('disconnect', () => {
+            console.log('disconnect');
+        });
+        socket.on('error', e => {
+            console.log('error', e);
+        });
+        socket.on('disconnect_message', (message: string) => {
+            Alert.alert('오류', message);
+        });
+
         Keyboard.dismiss();
         setModalVisible(undefined);
         setTimeout(() => {
+            setTexts({
+                nickname: '',
+                roomName: '',
+                password: '',
+            });
             openChatModal();
         }, 250);
-    }, [texts, openChatModal]);
+    }, [texts, modalVisible, openChatModal]);
 
     const dismissModal = useCallback(() => {
         if (keyboardDidShow) Keyboard.dismiss();
@@ -115,9 +143,15 @@ export default ({
 
     const getChatList = useCallback(async () => {
         setLoading(true);
-        // TODO: 채팅 리스트 가져오기
+        try {
+            const res = await fetch(CHAT_LIST_END_POINT);
+            if (res.status !== 200) throw new Error();
+            const chatList = await res.json();
+            setChatList(chatList);
+        } catch (e) {
+            setChatList([]);
+        }
         setLoading(false);
-        setChatList([]);
     }, []);
 
     useEffect(() => {
@@ -138,15 +172,55 @@ export default ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const onPress = useCallback((item: RoomProps) => {
+        console.log(item);
+    }, []);
+
+    const renderItem = useCallback(
+        ({ item }: { item: RoomProps }) => {
+            return <ChatItem item={item} onPress={onPress} />;
+        },
+        [onPress],
+    );
+
     return (
         <View
             style={{
+                paddingTop: top,
                 flex: 1,
                 justifyContent: 'center',
                 alignItems: 'center',
             }}>
-            {/* TODO: 상단 새로고침 버튼 */}
-            {/* TODO: 채팅 리스트 */}
+            <TouchableOpacity
+                onPress={getChatList}
+                style={{
+                    width: screen.width,
+                    height: 50,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderBottomWidth: 0.5,
+                    borderBottomColor: '#aaaaaa',
+                }}>
+                <Text>새로고침</Text>
+            </TouchableOpacity>
+            <FlatList
+                style={{ flex: 1 }}
+                data={chatList}
+                renderItem={renderItem}
+                keyExtractor={(item: RoomProps) => item.roomName}
+            />
+            <TouchableOpacity
+                style={{
+                    width: screen.width,
+                    height: 50,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderTopWidth: 0.5,
+                    borderTopColor: '#aaaaaa',
+                }}
+                onPress={createChat}>
+                <Text>방 생성</Text>
+            </TouchableOpacity>
             <Modal transparent visible={!!modalVisible} animationType="fade">
                 <KeyboardAvoidingView
                     enabled
@@ -285,9 +359,11 @@ export default ({
                 <ActivityIndicator
                     style={{ position: 'absolute' }}
                     size="large"
-                    color="#00ff00"
+                    color="#aaaaaa"
                 />
-            ) : null}
+            ) : (
+                <Text style={{ position: 'absolute' }}>방이 없습니다.</Text>
+            )}
         </View>
     );
 };
