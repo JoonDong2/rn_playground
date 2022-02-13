@@ -5,7 +5,7 @@ import {
 import { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useCallback, useState } from 'react';
-import { TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, TouchableWithoutFeedback, View } from 'react-native';
 import {
     PanGestureHandler,
     PanGestureHandlerGestureEvent,
@@ -26,8 +26,12 @@ import { Socket } from 'socket.io-client';
 
 export type RootTabNavigationProp = {
     Zoom: {
-        openChatModal: (socket: Socket) => void;
-        closeChatModal: () => void;
+        openChatModal: (props: {
+            socket: Socket;
+            roomName: string;
+            type: 'owner' | 'visitor';
+        }) => void;
+        closeChatModal: (local?: boolean) => void;
     };
     KakaoWebtoon: undefined;
 };
@@ -66,9 +70,17 @@ type TabProps = {
     navigation: TabNavigationProp;
 };
 
-let socket: Socket | undefined;
-
 export default ({ navigation }: TabProps) => {
+    const [roomInfo, setRoomInfo] = useState<{
+        socket: Socket | undefined;
+        roomName: string | undefined;
+        type: 'owner' | 'visitor' | undefined;
+    }>({
+        socket: undefined,
+        roomName: undefined,
+        type: undefined,
+    });
+
     const [currentIndex, setCurrentIndex] = useState(0);
 
     const { top, bottom } = useSafeAreaInsets();
@@ -121,27 +133,62 @@ export default ({ navigation }: TabProps) => {
         };
     });
 
+    const removeChatModal = useCallback(
+        (local?: boolean) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { type, roomName, socket } = roomInfo;
+            setModalVisible(false);
+            if (type && roomName && !local) {
+                socket?.emit(`exit_${type}`, { roomName });
+            }
+            modalTop.value = screen.height;
+            modalHeight.value = modalMaxHeight;
+            socket?.disconnect();
+
+            setRoomInfo({
+                socket: undefined,
+                roomName: undefined,
+                type: undefined,
+            });
+        },
+        [modalHeight, modalTop, roomInfo],
+    );
+
+    const closeChatModal = useCallback(
+        (local?: boolean) => {
+            modalTop.value = withTiming(
+                screen.height,
+                undefined,
+                isFinished => {
+                    if (!isFinished) return;
+                    runOnJS(removeChatModal)(local);
+                },
+            );
+        },
+        [modalTop, removeChatModal],
+    );
+
     const openChatModal = useCallback(
-        (connectedSocket: Socket) => {
-            socket = connectedSocket;
+        ({
+            socket: connectedSocket,
+            roomName: connectedRoomName,
+            type: connectedType,
+        }: {
+            socket: Socket;
+            roomName: string;
+            type: 'visitor' | 'owner';
+        }) => {
+            setRoomInfo({
+                socket: connectedSocket,
+                roomName: connectedRoomName,
+                type: connectedType,
+            });
             setModalVisible(true);
             modalHeight.value = modalMaxHeight;
             modalTop.value = withTiming(top);
         },
         [modalHeight, modalTop, top],
     );
-
-    const closeChatModal = useCallback(() => {
-        modalTop.value = withTiming(screen.height, undefined, isFinished => {
-            if (!isFinished) return;
-            setModalVisible(false);
-        });
-    }, [modalTop]);
-
-    const removeChatModal = useCallback(() => {
-        setModalVisible(false);
-        socket?.disconnect();
-    }, []);
 
     const onModalGestureEvent = useAnimatedGestureHandler<
         PanGestureHandlerGestureEvent,

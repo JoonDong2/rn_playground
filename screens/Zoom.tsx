@@ -57,6 +57,19 @@ export default ({
         undefined,
     );
 
+    const getChatList = useCallback(async (disableLoading?: boolean) => {
+        setLoading(!disableLoading);
+        try {
+            const res = await axios.get(CHAT_LIST_END_POINT);
+            if (res.status !== 200) throw new Error();
+            const chatList = await res.data;
+            setChatList(chatList);
+        } catch (e) {
+            setChatList([]);
+        }
+        setLoading(false);
+    }, []);
+
     const [keyboardDidShow, setKeybaordDidShow] = useState(false);
     const [modalVisible, setModalVisible] = useState<
         'enter' | 'create' | undefined
@@ -94,29 +107,30 @@ export default ({
         setModalVisible('create');
     }, [texts]);
 
-    const enterChat = useCallback(() => {
-        if (!texts.roomName) return;
-        // setModalVisible('enterFreeRoom');
-        // setModalVisible('enterPrivateRoom');
-    }, [texts]);
-
     const openChat = useCallback(() => {
         const { nickname, roomName } = texts;
         if (!nickname || !roomName) return;
 
         setEnteringLoading(true);
+        const type = modalVisible === 'create' ? 'owner' : 'visitor';
         const socket = getSocket({
             ...texts,
-            type: modalVisible === 'create' ? 'owner' : 'visitor',
+            type,
         });
         socket.on('disconnect', () => {
             setEnteringLoading(false);
             socket.removeAllListeners();
             setIsInChat(false);
+            getChatList();
         });
         socket.on('disconnect_message', (message: string) => {
             setEnteringLoading(false);
-            Alert.alert('오류', message);
+            Alert.alert('오류', message, [
+                {
+                    text: '확인',
+                    onPress: () => getChatList(),
+                },
+            ]);
             socket.removeAllListeners();
             setIsInChat(false);
         });
@@ -131,10 +145,32 @@ export default ({
                     password: '',
                 });
                 setIsInChat(true);
-                openChatModal(socket);
+                openChatModal({
+                    socket,
+                    roomName: texts.roomName,
+                    type,
+                });
             }, 250);
         });
-    }, [texts, modalVisible, openChatModal]);
+        socket.on('exit_visitor', (paylaod: { nickname: string }) => {
+            Alert.alert('알림', `${paylaod.nickname}님이 나갔습니다.`, [
+                {
+                    text: '확인',
+                    onPress: () => getChatList(),
+                },
+            ]);
+        });
+        socket.on('exit_owner', (paylaod: { nickname: string }) => {
+            Alert.alert('알림', `${paylaod.nickname}님이 나갔습니다.`, [
+                {
+                    text: '확인',
+                    onPress: () => getChatList(),
+                },
+            ]);
+            socket.disconnect();
+            closeChatModal(true);
+        });
+    }, [texts, modalVisible, getChatList, openChatModal, closeChatModal]);
 
     const dismissModal = useCallback(() => {
         if (keyboardDidShow) Keyboard.dismiss();
@@ -147,19 +183,6 @@ export default ({
             });
         }
     }, [keyboardDidShow]);
-
-    const getChatList = useCallback(async (disableLoading?: boolean) => {
-        setLoading(!disableLoading);
-        try {
-            const res = await axios.get(CHAT_LIST_END_POINT);
-            if (res.status !== 200) throw new Error();
-            const chatList = await res.data;
-            setChatList(chatList);
-        } catch (e) {
-            setChatList([]);
-        }
-        setLoading(false);
-    }, []);
 
     useEffect(() => {
         getChatList();
@@ -182,7 +205,13 @@ export default ({
     const onPress = useCallback(
         (item: RoomProps) => {
             if (isInChat) return;
-            console.log(item);
+            const { roomName } = item;
+            setTexts({
+                roomName,
+                nickname: '',
+                password: '',
+            });
+            setModalVisible('enter');
         },
         [isInChat],
     );
