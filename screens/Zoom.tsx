@@ -148,6 +148,7 @@ export default ({
                 openChatModal({
                     socket,
                     roomName: texts.roomName,
+                    ownerName: texts.nickname,
                     type,
                 });
             }, 250);

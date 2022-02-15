@@ -5,7 +5,7 @@ import {
 import { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useCallback, useState } from 'react';
-import { Alert, TouchableWithoutFeedback, View } from 'react-native';
+import { TouchableWithoutFeedback, View } from 'react-native';
 import {
     PanGestureHandler,
     PanGestureHandlerGestureEvent,
@@ -18,7 +18,6 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ZoomModal2 from '../components/ZoomModal2';
 import { screen, window } from '../Constants';
 import KakaoWebtoon from '../screens/KakaoWebtoon';
 import Zoom from '../screens/Zoom';
@@ -31,6 +30,7 @@ export type RootTabNavigationProp = {
         openChatModal: (props: {
             socket: Socket;
             roomName: string;
+            ownerName: string;
             type: 'owner' | 'visitor';
         }) => void;
         closeChatModal: (local?: boolean) => void;
@@ -77,6 +77,7 @@ export default ({ navigation }: TabProps) => {
         | {
               socket: Socket;
               roomName: string;
+              ownerName: string;
               type: 'owner' | 'visitor';
           }
         | undefined
@@ -142,6 +143,8 @@ export default ({ navigation }: TabProps) => {
                     roomName: roomInfo.roomName,
                 });
             }
+
+            // 작동안할 떄가 있다. closeChatModal 호출시 같이 호출.
             roomInfo?.socket?.disconnect();
 
             setModalVisible(false);
@@ -171,16 +174,19 @@ export default ({ navigation }: TabProps) => {
         ({
             socket: connectedSocket,
             roomName: connectedRoomName,
+            ownerName: connectedOwnerName,
             type: connectedType,
         }: {
             socket: Socket;
             roomName: string;
+            ownerName: string;
             type: 'visitor' | 'owner';
         }) => {
             // if (!modalMaxHeight || !modalMinifiedTop) return;
             setRoomInfo({
                 socket: connectedSocket,
                 roomName: connectedRoomName,
+                ownerName: connectedOwnerName,
                 type: connectedType,
             });
             setModalVisible(true);
@@ -353,10 +359,9 @@ export default ({ navigation }: TabProps) => {
                         <ZoomModal
                             {...roomInfo}
                             closeChatModal={closeChatModal}
-                            modalHeight={modalHeight}
                             modalTop={modalTop}
-                            modalMaxHeight={modalMaxHeight}
                             modalMinifiedTop={modalMinifiedTop}
+                            modalAppearing={modalAppearing}
                         />
                     </Animated.View>
                 </PanGestureHandler>

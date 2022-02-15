@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, StyleProp, ViewStyle } from 'react-native';
-import Animated, { SharedValue } from 'react-native-reanimated';
+import { Alert, StyleProp, TouchableOpacity, ViewStyle } from 'react-native';
+import Animated, {
+    SharedValue,
+    useAnimatedStyle,
+} from 'react-native-reanimated';
 import { Socket } from 'socket.io-client';
 import { mediaDevices, RTCPeerConnection, RTCView } from 'react-native-webrtc';
 import { isAndroid, screen } from '../Constants';
@@ -9,23 +12,28 @@ interface ZoomModalProps {
     socket: Socket;
     roomName: string;
     type: 'owner' | 'visitor';
+    ownerName: string;
     closeChatModal: (local?: boolean) => void;
     modalTop: SharedValue<number>;
-    modalHeight: SharedValue<number>;
-    modalMaxHeight: number;
     modalMinifiedTop: number;
+    modalAppearing: SharedValue<boolean>;
     style?: StyleProp<Animated.AnimateStyle<StyleProp<ViewStyle>>>;
 }
+
+const MINIFIED_MODAL_HEIGHT = 60;
+const MINIFIED_VIDEO_WIDTH = (MINIFIED_MODAL_HEIGHT * 16) / 9;
+const MINIFIED_VIDEO_HEIGHT = (MINIFIED_VIDEO_WIDTH * 16) / 9;
+const ETC_WIDTH = screen.width - MINIFIED_VIDEO_WIDTH;
 
 export default ({
     socket,
     roomName,
     type,
+    ownerName,
     closeChatModal,
     modalTop,
-    modalHeight,
-    modalMaxHeight,
     modalMinifiedTop,
+    modalAppearing,
     style,
 }: ZoomModalProps) => {
     const [peerStream, setPeerStream] = useState<any>(null);
@@ -34,22 +42,56 @@ export default ({
 
     const handleIcecandidate = useCallback(
         e => {
-            // if (isAndroid) console.log(type, 'icecandidate 전송', e);
             socket.emit('icecandidate', {
                 icecandidate: e.candidate,
                 roomName,
             });
         },
-        [roomName, socket, type],
+        [roomName, socket],
     );
 
-    const handleAddStream = useCallback(
-        e => {
-            console.log(type, '상대방 스트림 수신');
-            setPeerStream(e.stream);
-        },
-        [type],
-    );
+    const handleAddStream = useCallback(e => {
+        setPeerStream(e.stream);
+    }, []);
+
+    const removeMyPeerConnctionEventListener = useCallback(() => {
+        myPeerConnectionRef.current.removeEventListener(
+            'icecandidate',
+            handleIcecandidate,
+        );
+        myPeerConnectionRef.current.removeEventListener(
+            'addstream',
+            handleAddStream,
+        );
+        myPeerConnectionRef.current.removeEventListener(
+            'connectionstatechange',
+            onConnectionStateChange,
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [handleAddStream, handleIcecandidate]);
+
+    const onConnectionStateChange = useCallback(() => {
+        if (!myPeerConnectionRef.current) return;
+
+        const state = myPeerConnectionRef.current.connectionState;
+        // 연결이 되었을 때
+        if (state === 'connected') {
+            socket.disconnect();
+        }
+        // 연결이 끊겼을 때
+        else if (state === 'disconnected') {
+            Alert.alert('오류', '상대방이 나갔습니다.');
+            removeMyPeerConnctionEventListener();
+            myPeerConnectionRef.current.close();
+            closeChatModal(true);
+        }
+        // 연결에 실패했을 때
+        if (state === 'failed') {
+            removeMyPeerConnctionEventListener();
+            myPeerConnectionRef.current.close();
+            closeChatModal(true);
+        }
+    }, [closeChatModal, removeMyPeerConnctionEventListener, socket]);
 
     useEffect(() => {
         (async () => {
@@ -63,6 +105,7 @@ export default ({
 
             if (videoSourceInfo.length === 0) {
                 Alert.alert('오류', '비디오 스트림을 얻어오지 못했습니다.');
+                socket.disconnect();
                 closeChatModal();
                 return;
             }
@@ -101,15 +144,9 @@ export default ({
                 return;
             }
 
-            // myPeerConnection.addEventListener(
-            //     'icecandidate',
-            //     handleIcecandidate,
-            // );
-            // myPeerConnection.addEventListener('addstream', handleAddStream);
-
             myPeerConnection.onicecandidate = handleIcecandidate;
-
             myPeerConnection.onaddstream = handleAddStream;
+            myPeerConnection.onconnectionstatechange = onConnectionStateChange;
 
             if (isAndroid) console.log(type, '나의 스트림 추가');
             myPeerConnection.addStream(stream);
@@ -120,7 +157,6 @@ export default ({
                 // if (isAndroid) console.log(type, 'offer 수신');
                 // 상대방의 offer를 나의 PeerConnection에 저장한다.
                 myPeerConnection.setRemoteDescription(offer);
-
 
                 // answer 생성
                 const answer = await myPeerConnection.createAnswer();
@@ -150,8 +186,28 @@ export default ({
             socket.emit('offer', { offer, roomName });
             if (isAndroid) console.log(type, 'offer 전송');
         })();
+
+        return () => {
+            socket.disconnect();
+            removeMyPeerConnctionEventListener();
+            myPeerConnectionRef.current.close();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const videoContainerStyle = useAnimatedStyle(() => ({
+        width: modalAppearing.value
+            ? screen.width
+            : MINIFIED_VIDEO_WIDTH +
+              (screen.width * (modalMinifiedTop - modalTop.value)) /
+                  (modalMinifiedTop * 0.3),
+    }));
+
+    const etcContainerStyle = useAnimatedStyle(() => ({
+        opacity:
+            (modalTop.value - modalMinifiedTop * 0.7) /
+            (modalMinifiedTop * 0.3),
+    }));
 
     return (
         <Animated.View
@@ -159,15 +215,79 @@ export default ({
                 style,
                 {
                     flex: 1,
-                    backgroundColor: 'green',
-                    opacity: 0.5,
-                    justifyContent: 'center',
-                    alignItems: 'center',
+                    flexDirection: 'row',
+                    flexWrap: 'nowrap',
+                    backgroundColor: '#ffffff',
                 },
             ]}>
-            {peerStream && (
-                <RTCView style={{flex: 1, width: screen.width}} streamURL={peerStream.toURL()} objectFit="contain" />
-            )}
+            <Animated.View
+                style={[
+                    {
+                        minWidth: MINIFIED_VIDEO_WIDTH,
+                        maxWidth: screen.width,
+                        backgroundColor: '#000000',
+                        height: '100%',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        overflow: 'hidden',
+                    },
+                    videoContainerStyle,
+                ]}>
+                {peerStream ? (
+                    <RTCView
+                        style={{
+                            flex: 1,
+                            width: '100%',
+                            minHeight: MINIFIED_VIDEO_HEIGHT,
+                        }}
+                        streamURL={peerStream.toURL()}
+                        objectFit="contain"
+                    />
+                ) : (
+                    <Animated.Text
+                        style={{
+                            color: '#ffffff',
+                        }}>
+                        상대방을 기다리고 있습니다.
+                    </Animated.Text>
+                )}
+            </Animated.View>
+            <Animated.View
+                style={[
+                    {
+                        width: ETC_WIDTH,
+                        height: MINIFIED_MODAL_HEIGHT,
+                        flexDirection: 'row',
+                        justifyContent: 'flex-end',
+                        alignItems: 'center',
+                        backgroundColor: '#ffffff',
+                    },
+                    etcContainerStyle,
+                ]}>
+                <Animated.Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail">{`${ownerName}님이 만든 방: ${roomName}`}</Animated.Text>
+                <TouchableOpacity
+                    onPress={() => {
+                        socket.disconnect();
+                        myPeerConnectionRef.current?.close();
+                        closeChatModal(true);
+                    }}
+                    style={{
+                        width: MINIFIED_MODAL_HEIGHT - 20,
+                        height: MINIFIED_MODAL_HEIGHT,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}>
+                    <Animated.Text
+                        style={{
+                            fontSize: 20,
+                            includeFontPadding: false,
+                        }}>
+                        X
+                    </Animated.Text>
+                </TouchableOpacity>
+            </Animated.View>
         </Animated.View>
     );
 };
