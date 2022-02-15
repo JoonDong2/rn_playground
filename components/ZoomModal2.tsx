@@ -18,6 +18,7 @@ interface ZoomModalProps {
     closeChatModal: (local?: boolean) => void;
     modalTop: SharedValue<number>;
     modalMinifiedTop: number;
+    modalAppearing: SharedValue<boolean>;
     style?: StyleProp<Animated.AnimateStyle<StyleProp<ViewStyle>>>;
 }
 
@@ -31,14 +32,23 @@ export default ({
     closeChatModal,
     modalTop,
     modalMinifiedTop,
+    modalAppearing,
     style,
 }: ZoomModalProps) => {
     const videoContainerStyle = useAnimatedStyle(() => ({
-        width:
-            MINIFIED_VIDEO_WIDTH +
-            (screen.width * (modalMinifiedTop - modalTop.value)) /
-                (modalMinifiedTop * 0.3),
+        width: modalAppearing.value
+            ? screen.width
+            : MINIFIED_VIDEO_WIDTH +
+              (screen.width * (modalMinifiedTop - modalTop.value)) /
+                  (modalMinifiedTop * 0.3),
     }));
+
+    const etcContainerStyle = useAnimatedStyle(() => ({
+        opacity:
+            (modalTop.value - modalMinifiedTop * 0.7) /
+            (modalMinifiedTop * 0.3),
+    }));
+
     return (
         <Animated.View
             style={[
@@ -46,8 +56,8 @@ export default ({
                 {
                     flex: 1,
                     flexDirection: 'row',
-                    backgroundColor: 'green',
                     flexWrap: 'nowrap',
+                    backgroundColor: '#ffffff',
                 },
             ]}>
             <Animated.View
@@ -63,16 +73,21 @@ export default ({
                     videoContainerStyle,
                 ]}
             />
-            <View
-                style={{
-                    width: ETC_WIDTH,
-                    height: MINIFIED_MODAL_HEIGHT,
-                    flexDirection: 'row',
-                    justifyContent: 'flex-end',
-                    alignItems: 'center',
-                    backgroundColor: 'orange',
-                }}>
-                <Text>{`${nickName}님이 만든 방: ${roomName}`}</Text>
+            <Animated.View
+                style={[
+                    {
+                        width: ETC_WIDTH,
+                        height: MINIFIED_MODAL_HEIGHT,
+                        flexDirection: 'row',
+                        justifyContent: 'flex-end',
+                        alignItems: 'center',
+                        backgroundColor: '#ffffff',
+                    },
+                    etcContainerStyle,
+                ]}>
+                <Animated.Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail">{`${nickName}님이 만든 방: ${roomName}`}</Animated.Text>
                 <TouchableOpacity
                     style={{
                         width: MINIFIED_MODAL_HEIGHT - 20,
@@ -80,15 +95,15 @@ export default ({
                         justifyContent: 'center',
                         alignItems: 'center',
                     }}>
-                    <Text
+                    <Animated.Text
                         style={{
                             fontSize: 20,
                             includeFontPadding: false,
                         }}>
                         X
-                    </Text>
+                    </Animated.Text>
                 </TouchableOpacity>
-            </View>
+            </Animated.View>
         </Animated.View>
     );
 };

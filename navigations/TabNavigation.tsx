@@ -34,7 +34,7 @@ export type RootTabNavigationProp = {
 };
 
 const TAB_BAR_HEIGHT = 60;
-export const MINIFIED_MODAL_HEIGHT = 60;
+const MINIFIED_MODAL_HEIGHT = 60;
 
 let modalMaxHeight = 0;
 let modalMinifiedTop = 0;
@@ -82,6 +82,7 @@ export default ({ navigation }: TabProps) => {
     // top: 풀스크린 상태
     const modalTop = useSharedValue<number>(screen.height);
     const modalHeight = useSharedValue<number>(modalMaxHeight);
+    const modalAppearing = useSharedValue<boolean>(false);
 
     const tabBarStyle = useAnimatedStyle(() => {
         return {
@@ -121,10 +122,14 @@ export default ({ navigation }: TabProps) => {
     });
 
     const openModal = useCallback(() => {
+        modalAppearing.value = true;
         setModalVisible(true);
         modalHeight.value = modalMaxHeight;
-        modalTop.value = withTiming(top);
-    }, [modalHeight, modalTop, top]);
+        modalTop.value = withTiming(top, undefined, isFinished => {
+            if (!isFinished) return;
+            modalAppearing.value = false;
+        });
+    }, [modalAppearing, modalHeight, modalTop, top]);
 
     const closeModal = useCallback(() => setModalVisible(false), []);
 
@@ -294,9 +299,8 @@ export default ({ navigation }: TabProps) => {
                             nickName="준동"
                             closeChatModal={() => {}}
                             modalTop={modalTop}
-                            modalHeight={modalHeight}
-                            modalMaxHeight={modalMaxHeight}
                             modalMinifiedTop={modalMinifiedTop}
+                            modalAppearing={modalAppearing}
                         />
                     </Animated.View>
                 </PanGestureHandler>
