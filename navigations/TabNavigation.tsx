@@ -134,6 +134,7 @@ export default ({ navigation }: TabProps) => {
             minY: number;
             maxY: number;
             animating: boolean;
+            gestureDirection: 'up' | 'down' | undefined;
         }
     >({
         onStart: (event, ctx) => {
@@ -142,11 +143,12 @@ export default ({ navigation }: TabProps) => {
             ctx.firstModalTop = modalTop.value;
         },
         onActive: (event, ctx) => {
-            if (!ctx.minY && !ctx.maxY) {
+            if (!ctx.minY && !ctx.maxY && !ctx.gestureDirection) {
                 // 풀스크린 상태에서 제스쳐를 시작한 경우
                 if (ctx.firstModalTop === top) {
                     ctx.minY = top;
                     ctx.maxY = modalMinifiedTop;
+                    ctx.gestureDirection = 'down';
                 }
                 // 최소화 상태에서 제스쳐를 시작한 경우
                 else if (ctx.firstModalTop === modalMinifiedTop) {
@@ -154,11 +156,13 @@ export default ({ navigation }: TabProps) => {
                     if (event.translationY < 0) {
                         ctx.minY = top;
                         ctx.maxY = modalMinifiedTop;
+                        ctx.gestureDirection = 'up';
                     }
                     // 내리는 제스쳐
                     else if (event.translationY > 0) {
                         ctx.minY = modalMinifiedTop;
                         ctx.maxY = screen.height + TAB_BAR_HEIGHT;
+                        ctx.gestureDirection = 'down';
                     }
                 }
             }
@@ -181,15 +185,12 @@ export default ({ navigation }: TabProps) => {
             modalTop.value = newTop;
         },
         onEnd: (event, ctx) => {
-            ctx.animating = false;
-            ctx.minY = 0;
-            ctx.maxY = 0;
-
             // 최소화 상태에서 제스쳐를 시작한 경우
             if (ctx.firstModalTop === modalMinifiedTop) {
                 // 내리는 제스쳐
                 // 사라지게 한다.
                 if (
+                    ctx.gestureDirection === 'down' &&
                     event.translationY > 0 &&
                     event.translationY > (TAB_BAR_HEIGHT + bottom) * 0.1
                 ) {
@@ -203,12 +204,16 @@ export default ({ navigation }: TabProps) => {
                     );
                 }
                 // 복원한다.
-                else if (event.translationY > 0) {
+                else if (
+                    ctx.gestureDirection === 'down' &&
+                    event.translationY > 0
+                ) {
                     modalTop.value = withTiming(modalMinifiedTop);
                 }
                 // 올리는 제스쳐
                 // 최대화한다.
                 else if (
+                    ctx.gestureDirection === 'up' &&
                     event.translationY < 0 &&
                     -event.translationY > modalMaxHeight * 0.1
                 ) {
@@ -216,7 +221,10 @@ export default ({ navigation }: TabProps) => {
                     modalHeight.value = withTiming(modalMaxHeight);
                 }
                 // 복원한다.
-                else if (event.translationY < 0) {
+                else if (
+                    ctx.gestureDirection === 'up' &&
+                    event.translationY < 0
+                ) {
                     modalTop.value = withTiming(modalMinifiedTop);
                     modalHeight.value = withTiming(MINIFIED_MODAL_HEIGHT);
                 }
@@ -224,16 +232,24 @@ export default ({ navigation }: TabProps) => {
             // 최대화 상태에서 제스쳐를 시작한 경우
             else if (ctx.firstModalTop === top) {
                 // 최소화한다.
-                if (event.absoluteY > modalMaxHeight * 0.2) {
+                if (
+                    ctx.gestureDirection === 'down' &&
+                    event.absoluteY > modalMaxHeight * 0.2
+                ) {
                     modalTop.value = withTiming(modalMinifiedTop);
                     modalHeight.value = withTiming(MINIFIED_MODAL_HEIGHT);
                 }
                 // 복원한다.
-                else {
+                else if (ctx.gestureDirection === 'down') {
                     modalTop.value = withTiming(top);
                     modalHeight.value = withTiming(modalMaxHeight);
                 }
             }
+
+            ctx.animating = false;
+            ctx.minY = 0;
+            ctx.maxY = 0;
+            ctx.gestureDirection = undefined;
         },
     });
 
