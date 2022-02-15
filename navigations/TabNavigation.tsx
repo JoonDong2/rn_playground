@@ -135,15 +135,18 @@ export default ({ navigation }: TabProps) => {
 
     const removeChatModal = useCallback(
         (local?: boolean) => {
-            // setModalVisible(false);
-            // if (type && roomName && !local) {
-            //     socket?.emit(`exit_${type}`, { roomName });
-            // }
-            modalTop.value = screen.height;
-            modalHeight.value = modalMaxHeight;
+            if (roomInfo?.type && roomInfo?.roomName && !local) {
+                roomInfo?.socket?.emit(`exit_${roomInfo.type}`, {
+                    roomName: roomInfo.roomName,
+                });
+            }
             roomInfo?.socket?.disconnect();
 
+            setModalVisible(false);
             setRoomInfo(undefined);
+
+            modalTop.value = screen.height;
+            modalHeight.value = modalMaxHeight;
         },
         [modalHeight, modalTop],
     );
@@ -178,7 +181,7 @@ export default ({ navigation }: TabProps) => {
                 roomName: connectedRoomName,
                 type: connectedType,
             });
-            // setModalVisible(true);
+            setModalVisible(true);
             modalHeight.value = modalMaxHeight;
             modalTop.value = withTiming(top);
         },
@@ -319,7 +322,7 @@ export default ({ navigation }: TabProps) => {
                 <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
             </Tab.Navigator>
 
-            {roomInfo && (
+            {modalVisible && roomInfo && (
                 <PanGestureHandler onGestureEvent={onModalGestureEvent}>
                     <Animated.View
                         style={[
@@ -331,6 +334,7 @@ export default ({ navigation }: TabProps) => {
                         ]}>
                         <ZoomModal
                             {...roomInfo}
+                            closeChatModal={closeChatModal}
                             modalHeight={modalHeight}
                             modalTop={modalTop}
                             modalMaxHeight={modalMaxHeight}
