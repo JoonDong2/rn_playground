@@ -19,6 +19,7 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ZoomModal2 from '../components/ZoomModal2';
 import { screen, window } from '../Constants';
 import KakaoWebtoon from '../screens/KakaoWebtoon';
 import Zoom from '../screens/Zoom';
@@ -33,7 +34,7 @@ export type RootTabNavigationProp = {
 };
 
 const TAB_BAR_HEIGHT = 60;
-const MINIFIED_MODAL_HEIGHT = 60;
+export const MINIFIED_MODAL_HEIGHT = 60;
 
 let modalMaxHeight = 0;
 let modalMinifiedTop = 0;
@@ -285,10 +286,19 @@ export default ({ navigation }: TabProps) => {
                             {
                                 position: 'absolute',
                                 width: window.width,
-                                backgroundColor: 'red',
                             },
                         ]}
-                    />
+                    >
+                        <ZoomModal2
+                            roomName="안녕하세요."
+                            nickName="준동"
+                            closeChatModal={() => {}}
+                            modalTop={modalTop}
+                            modalHeight={modalHeight}
+                            modalMaxHeight={modalMaxHeight}
+                            modalMinifiedTop={modalMinifiedTop}
+                        />
+                    </Animated.View>
                 </PanGestureHandler>
             )}
 
