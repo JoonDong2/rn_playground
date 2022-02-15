@@ -148,6 +148,7 @@ export default ({
                 openChatModal({
                     socket,
                     roomName: texts.roomName,
+                    ownerName: texts.nickname,
                     type,
                 });
             }, 250);
@@ -299,7 +300,7 @@ export default ({
                         <View
                             style={{
                                 width: 300,
-                                height: 205,
+                                height: 240,
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 borderRadius: 10,
@@ -308,14 +309,14 @@ export default ({
                             <View
                                 style={{
                                     width: 250,
-                                    height: 30,
+                                    height: 35,
                                     flexDirection: 'row',
                                     justifyContent: 'center',
                                     alignItems: 'center',
                                     borderWidth: 1,
                                     borderColor: '#aaaaaa',
                                     borderRadius: 5,
-                                    marginBottom: 10,
+                                    marginBottom: 15,
                                 }}>
                                 <TextInput
                                     style={{
@@ -325,22 +326,23 @@ export default ({
                                         padding: 0,
                                         includeFontPadding: false,
                                     }}
-                                    placeholder="닉네임"
                                     value={texts.nickname}
                                     onChangeText={onChangeNickname}
+                                    autoCapitalize="none"
+                                    placeholder="닉네임"
                                 />
                             </View>
                             <View
                                 style={{
                                     width: 250,
-                                    height: 30,
+                                    height: 35,
                                     flexDirection: 'row',
                                     justifyContent: 'center',
                                     alignItems: 'center',
                                     borderWidth: 1,
                                     borderColor: '#aaaaaa',
                                     borderRadius: 5,
-                                    marginBottom: 10,
+                                    marginBottom: 15,
                                 }}>
                                 <TextInput
                                     style={{
@@ -356,20 +358,21 @@ export default ({
                                     editable={modalVisible === 'create'}
                                     value={texts.roomName}
                                     onChangeText={onChangeRoomName}
+                                    autoCapitalize="none"
                                     placeholder="방 이름"
                                 />
                             </View>
                             <View
                                 style={{
                                     width: 250,
-                                    height: 30,
+                                    height: 35,
                                     flexDirection: 'row',
                                     justifyContent: 'center',
                                     alignItems: 'center',
                                     borderWidth: 1,
                                     borderColor: '#aaaaaa',
                                     borderRadius: 5,
-                                    marginBottom: 10,
+                                    marginBottom: 15,
                                 }}>
                                 <TextInput
                                     style={{
@@ -382,6 +385,8 @@ export default ({
                                     value={texts.password}
                                     onChangeText={onChangePassword}
                                     textContentType="password"
+                                    secureTextEntry
+                                    autoCapitalize="none"
                                     placeholder="비밀번호"
                                 />
                             </View>
@@ -390,7 +395,7 @@ export default ({
                                 disabled={enteringLoading}
                                 style={{
                                     width: 250,
-                                    height: 30,
+                                    height: 35,
                                     borderRadius: 5,
                                     justifyContent: 'center',
                                     alignItems: 'center',
