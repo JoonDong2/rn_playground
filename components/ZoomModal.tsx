@@ -148,13 +148,11 @@ export default ({
             myPeerConnection.onaddstream = handleAddStream;
             myPeerConnection.onconnectionstatechange = onConnectionStateChange;
 
-            if (isAndroid) console.log(type, '나의 스트림 추가');
             myPeerConnection.addStream(stream);
 
             myPeerConnectionRef.current = myPeerConnection;
 
             socket.on('offer', async offer => {
-                // if (isAndroid) console.log(type, 'offer 수신');
                 // 상대방의 offer를 나의 PeerConnection에 저장한다.
                 myPeerConnection.setRemoteDescription(offer);
 
@@ -166,17 +164,14 @@ export default ({
 
                 // 나의 answer를 상대방에게 전달한다.
                 socket.emit('answer', { answer, roomName });
-                // if (isAndroid) console.log(type, 'answer 전송');
             });
 
             socket.on('answer', answer => {
-                // if (isAndroid) console.log(type, 'answer 수신');
                 myPeerConnection.setRemoteDescription(answer);
             });
 
             socket.on('icecandidate', icecandidate => {
                 if (!icecandidate) return;
-                // if (isAndroid) console.log(type, 'icecandidate 수신');
                 myPeerConnection.addIceCandidate(icecandidate);
             });
 
@@ -184,7 +179,6 @@ export default ({
             const offer = await myPeerConnection.createOffer();
             myPeerConnection.setLocalDescription(offer);
             socket.emit('offer', { offer, roomName });
-            if (isAndroid) console.log(type, 'offer 전송');
         })();
 
         return () => {
