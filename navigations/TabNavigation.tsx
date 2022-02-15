@@ -1,12 +1,11 @@
 import {
-    BottomTabBarProps,
     BottomTabNavigationProp,
     createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import React, { useCallback, useEffect, useState } from 'react';
-import { TouchableWithoutFeedback, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, TouchableWithoutFeedback, View } from 'react-native';
 import {
     PanGestureHandler,
     PanGestureHandlerGestureEvent,
@@ -24,11 +23,17 @@ import { screen, window } from '../Constants';
 import KakaoWebtoon from '../screens/KakaoWebtoon';
 import Zoom from '../screens/Zoom';
 import { MainStackParamList } from './StackNavigation';
+import { Socket } from 'socket.io-client';
+import ZoomModal from '../components/ZoomModal';
 
 export type RootTabNavigationProp = {
     Zoom: {
-        openModal: () => void;
-        closeModal: () => void;
+        openChatModal: (props: {
+            socket: Socket;
+            roomName: string;
+            type: 'owner' | 'visitor';
+        }) => void;
+        closeChatModal: (local?: boolean) => void;
     };
     KakaoWebtoon: undefined;
 };
@@ -68,6 +73,15 @@ type TabProps = {
 };
 
 export default ({ navigation }: TabProps) => {
+    const [roomInfo, setRoomInfo] = useState<
+        | {
+              socket: Socket;
+              roomName: string;
+              type: 'owner' | 'visitor';
+          }
+        | undefined
+    >(undefined);
+
     const [currentIndex, setCurrentIndex] = useState(0);
 
     const { top, bottom } = useSafeAreaInsets();
@@ -121,17 +135,60 @@ export default ({ navigation }: TabProps) => {
         };
     });
 
-    const openModal = useCallback(() => {
-        modalAppearing.value = true;
-        setModalVisible(true);
-        modalHeight.value = modalMaxHeight;
-        modalTop.value = withTiming(top, undefined, isFinished => {
-            if (!isFinished) return;
-            modalAppearing.value = false;
-        });
-    }, [modalAppearing, modalHeight, modalTop, top]);
+    const removeChatModal = useCallback(
+        (local?: boolean) => {
+            if (roomInfo?.type && roomInfo?.roomName && !local) {
+                roomInfo?.socket?.emit(`exit_${roomInfo.type}`, {
+                    roomName: roomInfo.roomName,
+                });
+            }
+            roomInfo?.socket?.disconnect();
 
-    const closeModal = useCallback(() => setModalVisible(false), []);
+            setModalVisible(false);
+            setRoomInfo(undefined);
+
+            modalTop.value = screen.height;
+            modalHeight.value = modalMaxHeight;
+        },
+        [modalHeight, modalTop],
+    );
+
+    const closeChatModal = useCallback(
+        (local?: boolean) => {
+            modalTop.value = withTiming(
+                screen.height,
+                undefined,
+                isFinished => {
+                    if (!isFinished) return;
+                    runOnJS(removeChatModal)(local);
+                },
+            );
+        },
+        [modalTop, removeChatModal],
+    );
+
+    const openChatModal = useCallback(
+        ({
+            socket: connectedSocket,
+            roomName: connectedRoomName,
+            type: connectedType,
+        }: {
+            socket: Socket;
+            roomName: string;
+            type: 'visitor' | 'owner';
+        }) => {
+            // if (!modalMaxHeight || !modalMinifiedTop) return;
+            setRoomInfo({
+                socket: connectedSocket,
+                roomName: connectedRoomName,
+                type: connectedType,
+            });
+            setModalVisible(true);
+            modalHeight.value = modalMaxHeight;
+            modalTop.value = withTiming(top);
+        },
+        [modalHeight, modalTop, top],
+    );
 
     const onModalGestureEvent = useAnimatedGestureHandler<
         PanGestureHandlerGestureEvent,
@@ -205,7 +262,7 @@ export default ({ navigation }: TabProps) => {
                         undefined,
                         finished => {
                             if (!finished) return;
-                            runOnJS(closeModal)();
+                            runOnJS(removeChatModal)();
                         },
                     );
                 }
@@ -276,14 +333,14 @@ export default ({ navigation }: TabProps) => {
                     name="Zoom"
                     component={Zoom}
                     initialParams={{
-                        openModal,
-                        closeModal,
+                        openChatModal,
+                        closeChatModal,
                     }}
                 />
                 <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
             </Tab.Navigator>
 
-            {modalVisible && (
+            {modalVisible && roomInfo && (
                 <PanGestureHandler onGestureEvent={onModalGestureEvent}>
                     <Animated.View
                         style={[
@@ -292,15 +349,14 @@ export default ({ navigation }: TabProps) => {
                                 position: 'absolute',
                                 width: window.width,
                             },
-                        ]}
-                    >
-                        <ZoomModal2
-                            roomName="안녕하세요."
-                            nickName="준동"
-                            closeChatModal={() => {}}
+                        ]}>
+                        <ZoomModal
+                            {...roomInfo}
+                            closeChatModal={closeChatModal}
+                            modalHeight={modalHeight}
                             modalTop={modalTop}
+                            modalMaxHeight={modalMaxHeight}
                             modalMinifiedTop={modalMinifiedTop}
-                            modalAppearing={modalAppearing}
                         />
                     </Animated.View>
                 </PanGestureHandler>
@@ -327,8 +383,8 @@ export default ({ navigation }: TabProps) => {
                             tab.name,
                             index === 0
                                 ? {
-                                      openModal,
-                                      closeModal,
+                                      openChatModal,
+                                      closeChatModal,
                                   }
                                 : undefined,
                         );
