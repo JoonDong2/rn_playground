@@ -3,19 +3,20 @@ import { createSharedElementStackNavigator } from 'react-navigation-shared-eleme
 import TabNavigation from './TabNavigation';
 
 export type MainStackParamList = {
-    'Tab': undefined;
-    'KakaoWebtoonDetail': undefined;
-}
+    Tab: undefined;
+    KakaoWebtoonDetail: undefined;
+};
 
 const Stack = createSharedElementStackNavigator<MainStackParamList>();
 
 export default () => {
     return (
-        <Stack.Navigator screenOptions={{
-            headerShown: false,
-            presentation: 'modal',
-        }}>
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+                presentation: 'modal',
+            }}>
             <Stack.Screen name="Tab" component={TabNavigation} />
         </Stack.Navigator>
-    )
-}
+    );
+};
