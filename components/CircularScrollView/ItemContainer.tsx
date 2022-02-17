@@ -1,10 +1,12 @@
 import React from 'react';
-import { View } from 'react-native';
+import { StyleProp, ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 interface ItemContainerProps {
-    children: React.ReactElement[];
+    children: any;
+    style?: StyleProp<Animated.AnimateStyle<StyleProp<ViewStyle>>>;
 }
 
-export default ({ children }: ItemContainerProps) => {
-    return <View>{children}</View>;
+export default ({ children, style }: ItemContainerProps) => {
+    return <Animated.View style={style}>{children}</Animated.View>;
 };
