@@ -16,7 +16,37 @@ export const circulateScrollTop = ({
     if (scrollTop < 0) {
         return height + (scrollTop % contentsHeight);
     } else if (scrollTop > 0) {
-        return -((scrollTop - height) % contentsHeight);
+        return -(
+            contentsHeight -
+            height -
+            ((scrollTop - height) % contentsHeight)
+        );
     }
     return scrollTop;
+};
+
+export const calculateFirstIndex = ({
+    scrollTop,
+    height,
+    contentsHeight,
+    itemHeight,
+    itemLength,
+}: {
+    scrollTop: number;
+    height: number;
+    contentsHeight: number;
+    itemHeight: number;
+    itemLength: number;
+}) => {
+    'worklet';
+    const pureScrollTop = circulateScrollTop({
+        scrollTop,
+        height,
+        contentsHeight,
+    });
+
+    const pureIndex = Math.floor(-pureScrollTop / itemHeight);
+
+    if (pureIndex < 0) return pureIndex + itemLength;
+    return pureIndex;
 };

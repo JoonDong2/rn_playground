@@ -14,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { screen } from '../../Constants';
 import ItemContainer from './ItemContainer';
-import { circulateScrollTop } from './ranges';
+import { calculateFirstIndex, circulateScrollTop } from './ranges';
 
 interface SpareProps {
     isSpare: boolean;
@@ -40,6 +40,7 @@ function CircularScrollView<ItemT>({
 }: CircularScrollViewProps<ItemT>) {
     const scrollTop = useSharedValue(0);
     const contentsHeight = useSharedValue(0);
+    const itemLength = useSharedValue(0);
     const range = useSharedValue<{ index: number; key: string }[]>([]);
 
     const [height, setHeight] = useState(0);
@@ -55,17 +56,17 @@ function CircularScrollView<ItemT>({
         const spareHeight = height - pureContentsHeight;
         if (spareHeight < 0) {
             setItems(data.map((item, index) => ({ ...item, index })));
+            itemLength.value = data.length;
         } else {
             setItems([
                 ...data.map((item, index) => ({ ...item, index })),
                 { isSpare: true, spareHeight, index: data.length },
             ]);
+            itemLength.value = data.length + 1;
         }
-        
-    }, [contentsHeight, data, height, itemHeight]);
+    }, [contentsHeight, data, height, itemHeight, itemLength]);
 
     const onLayout = useCallback((event: LayoutChangeEvent) => {
-        console.log("여기a", event.nativeEvent.layout.height);
         setHeight(event.nativeEvent.layout.height);
     }, []);
 
@@ -83,18 +84,20 @@ function CircularScrollView<ItemT>({
             scrollTop.value = ctx.firstScrollTop + event.translationY;
         },
         onEnd: event => {
-            scrollTop.value = withDecay({
-                velocity: event.velocityY,
-            }, (isFinished) => {
-                if (!isFinished) return;
-                const aa = circulateScrollTop({
-                    scrollTop: scrollTop.value,
-                    height,
-                    contentsHeight: contentsHeight.value,
-                });
-                console.log("여기2", aa)
-                scrollTop.value = aa;
-            });
+            scrollTop.value = withDecay(
+                {
+                    velocity: event.velocityY,
+                },
+                isFinished => {
+                    if (!isFinished) return;
+                    const newScrollTop = circulateScrollTop({
+                        scrollTop: scrollTop.value,
+                        height,
+                        contentsHeight: contentsHeight.value,
+                    });
+                    scrollTop.value = newScrollTop;
+                },
+            );
         },
     });
 
@@ -102,17 +105,32 @@ function CircularScrollView<ItemT>({
         () => {
             return scrollTop.value;
         },
-        (result, previous) => {
-            console.log("여기", result);
+        result => {
+            // TODO: newScrollTop을 사용하여 화면에 표시될 아이템 인덱스 배열 만들기
+            console.log('여기1', circulateScrollTop({
+                scrollTop: result,
+                height,
+                contentsHeight: contentsHeight.value,
+            }));
+            const firstIndex = calculateFirstIndex({
+                scrollTop: scrollTop.value,
+                height,
+                contentsHeight: contentsHeight.value,
+                itemHeight,
+                itemLength: itemLength.value,
+            });
+            console.log("여기3", firstIndex);
         },
         [scrollTop, contentsHeight],
     );
 
     const testStyle = useAnimatedStyle(() => ({
-        transform: [{
-            translateY: scrollTop.value
-        }],
-    }))
+        transform: [
+            {
+                translateY: scrollTop.value,
+            },
+        ],
+    }));
 
     return (
         <PanGestureHandler onGestureEvent={onModalGestureEvent}>
@@ -125,10 +143,13 @@ function CircularScrollView<ItemT>({
                         return (
                             <Animated.View
                                 key={item.index}
-                                style={[{
-                                    height: spare.spareHeight,
-                                    backgroundColor: 'yellow',
-                                }, testStyle]}
+                                style={[
+                                    {
+                                        height: spare.spareHeight,
+                                        backgroundColor: 'yellow',
+                                    },
+                                    testStyle,
+                                ]}
                             />
                         );
                     }
