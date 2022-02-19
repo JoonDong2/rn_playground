@@ -11,13 +11,11 @@ export const circulateScrollTop = ({
 
 export const calculateFirstIndex = ({
     scrollTop,
-    height,
     contentsHeight,
     itemHeight,
     itemLength,
 }: {
     scrollTop: number;
-    height: number;
     contentsHeight: number;
     itemHeight: number;
     itemLength: number;
@@ -51,7 +49,6 @@ export const calculateBoundary = ({
     'worklet';
     let firstIndex = calculateFirstIndex({
         scrollTop,
-        height,
         contentsHeight: contentsHeight,
         itemHeight,
         itemLength: itemLength,

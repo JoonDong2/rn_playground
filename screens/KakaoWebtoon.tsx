@@ -8,7 +8,7 @@ export default () => {
     return (
         <CircularScrollView
             style={{ flex: 1 }}
-            data={overflowData}
+            data={dataWithSpare}
             itemHeight={200}
             renderItem={({ item, index }) => {
                 return (
