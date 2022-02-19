@@ -78,10 +78,10 @@ export const calculateBoundary = ({
     const maxIndex = itemLength - 1;
 
     if (buffer) {
-        firstIndex = ((firstIndex - buffer) % maxIndex) + maxIndex;
+        firstIndex = ((firstIndex - buffer + 1) % maxIndex) + maxIndex;
     }
 
-    const doubleBuffer = 2 * buffer;
+    const doubleBuffer = buffer * 2;
     const pureOffsetCount = Math.ceil(height / itemHeight);
     const offsetCount =
         Math.ceil(
@@ -90,7 +90,7 @@ export const calculateBoundary = ({
         ) + doubleBuffer;
 
     const boundary = [];
-    for (let i = 0; i < offsetCount + doubleBuffer; i++) {
+    for (let i = 0; i < offsetCount; i++) {
         boundary.push((firstIndex + i) % (maxIndex + 1));
     }
 

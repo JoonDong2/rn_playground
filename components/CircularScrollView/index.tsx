@@ -40,7 +40,7 @@ function CircularScrollView<ItemT>({
     const contentsHeight = useSharedValue(0);
     const itemLength = useSharedValue(0);
     const height = useSharedValue(0);
-    const range = useSharedValue<{ index: number; key: string }[]>([]);
+    const boundary = useSharedValue<number[]>([]);
 
     const [heightTrigger, setHeightTrigger] = useState(false);
 
@@ -49,10 +49,34 @@ function CircularScrollView<ItemT>({
 
     useEffect(() => {
         if (!heightTrigger) return;
-        contentsHeight.value = data.length * itemHeight;
+        console.log("여기", data);
+        const newContentsHeight = data.length * itemHeight;
+        contentsHeight.value = newContentsHeight;
         setItems(data.map((item, index) => ({ ...item, index })));
-        itemLength.value = data.length;
-    }, [heightTrigger, contentsHeight, data, height, itemHeight, itemLength]);
+        const newItemValue = data.length;
+        itemLength.value = newItemValue;
+
+        const aa = calculateBoundary({
+            scrollTop: 0,
+            height: height.value,
+            contentsHeight: newContentsHeight,
+            itemHeight,
+            itemLength: newItemValue,
+            buffer,
+        });
+        boundary.value = aa;
+        console.log(aa);
+    }, [
+        heightTrigger,
+        contentsHeight,
+        data,
+        height,
+        itemHeight,
+        itemLength,
+        boundary,
+        scrollTop.value,
+        buffer,
+    ]);
 
     const onLayout = useCallback(
         (event: LayoutChangeEvent) => {
@@ -97,30 +121,30 @@ function CircularScrollView<ItemT>({
         () => {
             return scrollTop.value;
         },
-        () => {
+        (result, previous) => {
+            if (result === (previous || 0)) return;
             // TODO: newScrollTop을 사용하여 화면에 표시될 아이템 인덱스 배열 만들기
             // console.log('여기1', circulateScrollTop({
             //     scrollTop: result,
             //     height,
             //     contentsHeight: contentsHeight.value,
             // }));
-            const firstIndex = calculateFirstIndex({
+            // const firstIndex = calculateFirstIndex({
+            //     scrollTop: scrollTop.value,
+            //     height: height.value,
+            //     contentsHeight: contentsHeight.value,
+            //     itemHeight,
+            //     itemLength: itemLength.value,
+            // });
+            // console.log('여기1', firstIndex);
+            boundary.value = calculateBoundary({
                 scrollTop: scrollTop.value,
                 height: height.value,
                 contentsHeight: contentsHeight.value,
                 itemHeight,
                 itemLength: itemLength.value,
+                buffer,
             });
-            console.log('여기1', firstIndex);
-            const boundary = calculateBoundary({
-                scrollTop: scrollTop.value,
-                height: height.value,
-                contentsHeight: contentsHeight.value,
-                itemHeight,
-                itemLength: itemLength.value,
-                buffer: 0,
-            });
-            console.log('여기2', boundary);
         },
         [scrollTop, contentsHeight],
     );
