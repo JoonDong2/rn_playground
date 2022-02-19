@@ -123,6 +123,7 @@ function CircularScrollView<ItemT>({
                 itemLength: itemLength.value,
                 buffer,
             });
+            // console.log("boundary", newBoundary);
             boundary.value = newBoundary;
         },
         [scrollTop],
@@ -160,6 +161,7 @@ function CircularScrollView<ItemT>({
                             firstIndex={buffer}
                             firstIndexValue={items[buffer]}
                             itemHeight={itemHeight}
+                            itmeLength={data.length}
                             index={index}
                             contentsHeight={contentsHeight}>
                             {data[item]

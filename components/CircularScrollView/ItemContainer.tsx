@@ -11,6 +11,7 @@ interface ItemContainerProps {
     firstIndex: number;
     firstIndexValue: number;
     itemHeight: number;
+    itmeLength: number;
     index: number;
     contentsHeight: SharedValue<number>;
 }
@@ -21,17 +22,23 @@ export default ({
     firstIndex,
     firstIndexValue,
     itemHeight,
+    itmeLength,
     index,
     contentsHeight,
 }: ItemContainerProps) => {
     const containerStyle = useAnimatedStyle(() => {
+        const circulatedScrollTop = circulateScrollTop({
+            scrollTop: scrollTop.value,
+            contentsHeight: contentsHeight.value,
+        });
         const top =
-            circulateScrollTop({
-                scrollTop: scrollTop.value,
-                contentsHeight: contentsHeight.value,
-            }) +
-            firstIndexValue * itemHeight +
-            (index - firstIndex) * itemHeight;
+            circulatedScrollTop <= 0
+                ? circulatedScrollTop +
+                  firstIndexValue * itemHeight +
+                  (index - firstIndex) * itemHeight
+                : circulatedScrollTop +
+                  (firstIndexValue - itmeLength) * itemHeight +
+                  (index - firstIndex) * itemHeight;
         return {
             top: top || 0,
         };
