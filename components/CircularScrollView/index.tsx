@@ -13,7 +13,11 @@ import Animated, {
     withDecay,
 } from 'react-native-reanimated';
 import ItemContainer from './ItemContainer';
-import { calculateFirstIndex, circulateScrollTop } from './ranges';
+import {
+    calculateBoundary,
+    calculateFirstIndex,
+    circulateScrollTop,
+} from './ranges';
 
 interface CircularScrollViewProps<ItemT> {
     data: ItemT[];
@@ -35,23 +39,28 @@ function CircularScrollView<ItemT>({
     const scrollTop = useSharedValue(0);
     const contentsHeight = useSharedValue(0);
     const itemLength = useSharedValue(0);
+    const height = useSharedValue(0);
     const range = useSharedValue<{ index: number; key: string }[]>([]);
 
-    const [height, setHeight] = useState(0);
+    const [heightTrigger, setHeightTrigger] = useState(false);
 
     // eslint-disable-next-line prettier/prettier
     const [items, setItems] = useState<(ItemT & {index: number})[]>([]);
 
     useEffect(() => {
-        if (!height) return;
+        if (!heightTrigger) return;
         contentsHeight.value = data.length * itemHeight;
         setItems(data.map((item, index) => ({ ...item, index })));
         itemLength.value = data.length;
-    }, [contentsHeight, data, height, itemHeight, itemLength]);
+    }, [heightTrigger, contentsHeight, data, height, itemHeight, itemLength]);
 
-    const onLayout = useCallback((event: LayoutChangeEvent) => {
-        setHeight(event.nativeEvent.layout.height);
-    }, []);
+    const onLayout = useCallback(
+        (event: LayoutChangeEvent) => {
+            height.value = event.nativeEvent.layout.height;
+            setHeightTrigger(true);
+        },
+        [height],
+    );
 
     const onModalGestureEvent = useAnimatedGestureHandler<
         PanGestureHandlerGestureEvent,
@@ -75,7 +84,7 @@ function CircularScrollView<ItemT>({
                     if (!isFinished) return;
                     const newScrollTop = circulateScrollTop({
                         scrollTop: scrollTop.value,
-                        height,
+                        height: height.value,
                         contentsHeight: contentsHeight.value,
                     });
                     scrollTop.value = newScrollTop;
@@ -88,7 +97,7 @@ function CircularScrollView<ItemT>({
         () => {
             return scrollTop.value;
         },
-        result => {
+        () => {
             // TODO: newScrollTop을 사용하여 화면에 표시될 아이템 인덱스 배열 만들기
             // console.log('여기1', circulateScrollTop({
             //     scrollTop: result,
@@ -97,12 +106,21 @@ function CircularScrollView<ItemT>({
             // }));
             const firstIndex = calculateFirstIndex({
                 scrollTop: scrollTop.value,
-                height,
+                height: height.value,
                 contentsHeight: contentsHeight.value,
                 itemHeight,
                 itemLength: itemLength.value,
             });
-            console.log("여기3", firstIndex);
+            console.log('여기1', firstIndex);
+            const boundary = calculateBoundary({
+                scrollTop: scrollTop.value,
+                height: height.value,
+                contentsHeight: contentsHeight.value,
+                itemHeight,
+                itemLength: itemLength.value,
+                buffer: 0,
+            });
+            console.log('여기2', boundary);
         },
         [scrollTop, contentsHeight],
     );
