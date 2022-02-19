@@ -1,14 +1,14 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import CircularScrollView from '../components/CircularScrollView';
-import { overflowData } from '../components/CircularScrollView/testData';
+import { overflowData, dataWithSpare } from '../components/CircularScrollView/testData';
 import { screen } from '../Constants';
 
 export default () => {
     return (
         <CircularScrollView
             style={{ flex: 1 }}
-            data={overflowData}
+            data={dataWithSpare}
             itemHeight={200}
             renderItem={({ item, index }) => {
                 return (

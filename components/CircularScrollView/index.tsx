@@ -6,18 +6,14 @@ import {
 } from 'react-native-gesture-handler';
 import Animated, {
     cancelAnimation,
+    runOnJS,
     useAnimatedGestureHandler,
     useAnimatedReaction,
-    useAnimatedStyle,
     useSharedValue,
     withDecay,
 } from 'react-native-reanimated';
 import ItemContainer from './ItemContainer';
-import {
-    calculateBoundary,
-    calculateFirstIndex,
-    circulateScrollTop,
-} from './ranges';
+import { calculateBoundary, circulateScrollTop } from './ranges';
 
 interface CircularScrollViewProps<ItemT> {
     data: ItemT[];
@@ -33,7 +29,7 @@ function CircularScrollView<ItemT>({
     data,
     renderItem,
     itemHeight = 80,
-    buffer = 5,
+    buffer = 0,
     style,
 }: CircularScrollViewProps<ItemT>) {
     const scrollTop = useSharedValue(0);
@@ -42,46 +38,43 @@ function CircularScrollView<ItemT>({
     const height = useSharedValue(0);
     const boundary = useSharedValue<number[]>([]);
 
-    const [heightTrigger, setHeightTrigger] = useState(false);
+    const [items, setItems] = useState<number[]>([]);
 
-    // eslint-disable-next-line prettier/prettier
-    const [items, setItems] = useState<(ItemT & {index: number})[]>([]);
+    const [layoutHeight, setLayoutHeight] = useState(0);
 
     useEffect(() => {
-        if (!heightTrigger) return;
-        console.log("여기", data);
+        if (!layoutHeight) return;
         const newContentsHeight = data.length * itemHeight;
         contentsHeight.value = newContentsHeight;
-        setItems(data.map((item, index) => ({ ...item, index })));
         const newItemValue = data.length;
         itemLength.value = newItemValue;
 
-        const aa = calculateBoundary({
+        const newBoudary = calculateBoundary({
             scrollTop: 0,
-            height: height.value,
+            height: layoutHeight,
             contentsHeight: newContentsHeight,
             itemHeight,
             itemLength: newItemValue,
             buffer,
         });
-        boundary.value = aa;
-        console.log(aa);
+        boundary.value = newBoudary;
+        // console.log("boundary", newBoudary);
+        setItems(newBoudary);
     }, [
-        heightTrigger,
+        layoutHeight,
         contentsHeight,
         data,
         height,
         itemHeight,
         itemLength,
         boundary,
-        scrollTop.value,
         buffer,
     ]);
 
     const onLayout = useCallback(
         (event: LayoutChangeEvent) => {
             height.value = event.nativeEvent.layout.height;
-            setHeightTrigger(true);
+            setLayoutHeight(event.nativeEvent.layout.height);
         },
         [height],
     );
@@ -106,12 +99,10 @@ function CircularScrollView<ItemT>({
                 },
                 isFinished => {
                     if (!isFinished) return;
-                    const newScrollTop = circulateScrollTop({
+                    scrollTop.value = circulateScrollTop({
                         scrollTop: scrollTop.value,
-                        height: height.value,
                         contentsHeight: contentsHeight.value,
                     });
-                    scrollTop.value = newScrollTop;
                 },
             );
         },
@@ -122,53 +113,61 @@ function CircularScrollView<ItemT>({
             return scrollTop.value;
         },
         (result, previous) => {
-            if (result === (previous || 0)) return;
-            // TODO: newScrollTop을 사용하여 화면에 표시될 아이템 인덱스 배열 만들기
-            // console.log('여기1', circulateScrollTop({
-            //     scrollTop: result,
-            //     height,
-            //     contentsHeight: contentsHeight.value,
-            // }));
-            // const firstIndex = calculateFirstIndex({
-            //     scrollTop: scrollTop.value,
-            //     height: height.value,
-            //     contentsHeight: contentsHeight.value,
-            //     itemHeight,
-            //     itemLength: itemLength.value,
-            // });
-            // console.log('여기1', firstIndex);
-            boundary.value = calculateBoundary({
-                scrollTop: scrollTop.value,
+            if (previous === null || result === previous) return;
+            // newScrollTop을 사용하여 화면에 표시될 아이템 인덱스 배열 만들기
+            const newBoundary = calculateBoundary({
+                scrollTop: result,
                 height: height.value,
                 contentsHeight: contentsHeight.value,
                 itemHeight,
                 itemLength: itemLength.value,
                 buffer,
             });
+            boundary.value = newBoundary;
         },
-        [scrollTop, contentsHeight],
+        [scrollTop],
     );
 
-    const testStyle = useAnimatedStyle(() => ({
-        transform: [
-            {
-                translateY: scrollTop.value,
-            },
-        ],
-    }));
+    useAnimatedReaction(
+        () => {
+            return boundary.value;
+        },
+        (result, previous) => {
+            if (
+                previous === null ||
+                result.length === 0 ||
+                result.every((item, index) => previous[index] === item)
+            ) {
+                return;
+            }
+            runOnJS(setItems)(result);
+        },
+        [boundary],
+    );
 
     return (
         <PanGestureHandler onGestureEvent={onModalGestureEvent}>
             <Animated.View
                 style={[style, { overflow: 'hidden' }]}
                 onLayout={onLayout}>
-                {items.map(item => {
+                {items.map((item, index) => {
                     return (
-                        <ItemContainer style={testStyle} key={item.index}>
-                            {renderItem({
-                                item: item,
-                                index: item.index,
-                            })}
+                        // buffer 크기와 동일한 인덱스는 실제 화면에 보이는 첫 번째 인덱스가 된다.
+                        <ItemContainer
+                            // style={testStyle}
+                            key={`${item}${index}`}
+                            scrollTop={scrollTop}
+                            firstIndex={buffer}
+                            firstIndexValue={items[buffer]}
+                            itemHeight={itemHeight}
+                            index={index}
+                            contentsHeight={contentsHeight}>
+                            {data[item]
+                                ? renderItem({
+                                      item: data[item],
+                                      index: item,
+                                  })
+                                : null}
                         </ItemContainer>
                     );
                 })}
