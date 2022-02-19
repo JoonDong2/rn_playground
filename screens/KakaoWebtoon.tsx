@@ -1,19 +1,27 @@
 import React from 'react';
-import {
-    Text,
-    View,
-} from 'react-native';
+import { Text, View } from 'react-native';
+import CircularScrollView from '../components/CircularScrollView';
+import { overflowData, dataWithSpare } from '../components/CircularScrollView/testData';
+import { screen } from '../Constants';
 
 export default () => {
     return (
-        <View style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center'
-        }}>
-            <Text>
-                카카오 웹툰 클론
-            </Text>
-        </View>
-    )
-}
+        <CircularScrollView
+            style={{ flex: 1 }}
+            data={dataWithSpare}
+            itemHeight={200}
+            renderItem={({ item, index }) => {
+                return (
+                    <View
+                        style={{
+                            width: screen.width,
+                            height: 200,
+                            backgroundColor: item.color,
+                        }}>
+                        <Text>{index}</Text>
+                    </View>
+                );
+            }}
+        />
+    );
+};
