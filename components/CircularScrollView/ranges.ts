@@ -9,8 +9,8 @@ export const circulateScrollTop = ({
 }) => {
     'worklet';
     if (
-        (scrollTop > 0 && scrollTop < contentsHeight) ||
-        (scrollTop < 0 && scrollTop > -contentsHeight)
+        (scrollTop > 0 && scrollTop <= contentsHeight) ||
+        (scrollTop < 0 && scrollTop >= -contentsHeight)
     )
         return scrollTop;
     if (scrollTop < 0) {
@@ -41,7 +41,7 @@ export const calculateFirstIndex = ({
     'worklet';
     const pureScrollTop = circulateScrollTop({
         scrollTop,
-        height,
+        height: height,
         contentsHeight,
     });
 

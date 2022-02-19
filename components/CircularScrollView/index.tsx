@@ -12,14 +12,8 @@ import Animated, {
     useSharedValue,
     withDecay,
 } from 'react-native-reanimated';
-import { screen } from '../../Constants';
 import ItemContainer from './ItemContainer';
 import { calculateFirstIndex, circulateScrollTop } from './ranges';
-
-interface SpareProps {
-    isSpare: boolean;
-    spareHeight: number;
-}
 
 interface CircularScrollViewProps<ItemT> {
     data: ItemT[];
@@ -46,24 +40,13 @@ function CircularScrollView<ItemT>({
     const [height, setHeight] = useState(0);
 
     // eslint-disable-next-line prettier/prettier
-    const [items, setItems] = useState<((ItemT | SpareProps) & {index: number})[]>([]);
+    const [items, setItems] = useState<(ItemT & {index: number})[]>([]);
 
     useEffect(() => {
         if (!height) return;
-        const pureContentsHeight = data.length * itemHeight;
-        contentsHeight.value = Math.max(pureContentsHeight, height);
-
-        const spareHeight = height - pureContentsHeight;
-        if (spareHeight < 0) {
-            setItems(data.map((item, index) => ({ ...item, index })));
-            itemLength.value = data.length;
-        } else {
-            setItems([
-                ...data.map((item, index) => ({ ...item, index })),
-                { isSpare: true, spareHeight, index: data.length },
-            ]);
-            itemLength.value = data.length + 1;
-        }
+        contentsHeight.value = data.length * itemHeight;
+        setItems(data.map((item, index) => ({ ...item, index })));
+        itemLength.value = data.length;
     }, [contentsHeight, data, height, itemHeight, itemLength]);
 
     const onLayout = useCallback((event: LayoutChangeEvent) => {
@@ -107,11 +90,11 @@ function CircularScrollView<ItemT>({
         },
         result => {
             // TODO: newScrollTop을 사용하여 화면에 표시될 아이템 인덱스 배열 만들기
-            console.log('여기1', circulateScrollTop({
-                scrollTop: result,
-                height,
-                contentsHeight: contentsHeight.value,
-            }));
+            // console.log('여기1', circulateScrollTop({
+            //     scrollTop: result,
+            //     height,
+            //     contentsHeight: contentsHeight.value,
+            // }));
             const firstIndex = calculateFirstIndex({
                 scrollTop: scrollTop.value,
                 height,
@@ -138,27 +121,11 @@ function CircularScrollView<ItemT>({
                 style={[style, { overflow: 'hidden' }]}
                 onLayout={onLayout}>
                 {items.map(item => {
-                    const spare = item as SpareProps;
-                    if (spare.isSpare && spare.spareHeight) {
-                        return (
-                            <Animated.View
-                                key={item.index}
-                                style={[
-                                    {
-                                        height: spare.spareHeight,
-                                        backgroundColor: 'yellow',
-                                    },
-                                    testStyle,
-                                ]}
-                            />
-                        );
-                    }
-                    const realItem = item as ItemT & { index: number };
                     return (
                         <ItemContainer style={testStyle} key={item.index}>
                             {renderItem({
-                                item: realItem,
-                                index: realItem.index,
+                                item: item,
+                                index: item.index,
                             })}
                         </ItemContainer>
                     );
