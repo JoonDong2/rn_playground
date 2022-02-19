@@ -5,6 +5,9 @@ import TabNavigation from './TabNavigation';
 export type MainStackParamList = {
     Tab: undefined;
     KakaoWebtoonDetail: undefined;
+    WebtoonDetail: {
+        image: string;
+    };
 };
 
 const Stack = createSharedElementStackNavigator<MainStackParamList>();
