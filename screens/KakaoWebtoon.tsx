@@ -1,55 +1,35 @@
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useCallback } from 'react';
-import { TouchableWithoutFeedback } from 'react-native';
-import Animated from 'react-native-reanimated';
-import { SharedElement } from 'react-navigation-shared-element';
 import CircularScrollView from '../components/CircularScrollView';
-import { screen } from '../Constants';
 import { data, DataProps } from '../Constants/data';
 import { MainStackParamList } from '../navigations/StackNavigation';
-import FastImage from 'react-native-fast-image';
+import SharedItem from '../components/SharedItem';
 
 type TabStackNavigationProp = StackNavigationProp<MainStackParamList, 'Tab'>;
 
 export default () => {
     const navigation = useNavigation<TabStackNavigationProp>();
-    const renderItem = useCallback(
-        ({
-            item: { image, title, desc },
-            index,
-        }: {
-            item: DataProps;
+
+    const onPress = useCallback(
+        (props: {
+            image: string;
+            title: string;
+            desc: string;
             index: number;
         }) => {
-            return (
-                <TouchableWithoutFeedback
-                    onPress={() =>
-                        navigation.navigate('WebtoonDetail', {
-                            image,
-                            title,
-                            desc,
-                            index,
-                        })
-                    }>
-                    <Animated.View
-                        style={{
-                            width: screen.width,
-                            height: 300,
-                        }}>
-                        <SharedElement id={`${index}-${image}`}>
-                            <FastImage
-                                source={{ uri: image }}
-                                style={{ width: screen.width, height: 300 }}
-                                resizeMode="cover"
-                            />
-                        </SharedElement>
-                    </Animated.View>
-                </TouchableWithoutFeedback>
-            );
+            navigation.navigate('WebtoonDetail', props);
         },
         [navigation],
     );
+
+    const renderItem = useCallback(
+        ({ item, index }: { item: DataProps; index: number }) => {
+            return <SharedItem {...item} index={index} onPress={onPress} />;
+        },
+        [onPress],
+    );
+
     return (
         <CircularScrollView
             style={{ flex: 1 }}

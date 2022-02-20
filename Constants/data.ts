@@ -35,9 +35,9 @@ export const data: DataProps[] = [
         title: '제목6',
         desc: '설명6',
     },
-    {
-        image: 'https://joondong2.github.io/rn_playground/images/7.jpeg',
-        title: '제목7',
-        desc: '설명7',
-    },
+    // {
+    //     image: 'https://joondong2.github.io/rn_playground/images/7.jpeg',
+    //     title: '제목7',
+    //     desc: '설명7',
+    // },
 ];
