@@ -134,7 +134,7 @@ function CircularScrollView<ItemT>({
         [scrollTop],
     );
 
-    // console.log("\n\n\n", items, "\n\n\n");
+    // console.log('\n\n\n', items, '\n\n\n');
 
     return (
         <PanGestureHandler onGestureEvent={onModalGestureEvent}>
@@ -156,12 +156,10 @@ function CircularScrollView<ItemT>({
                             itmeLength={data.length}
                             index={index}
                             contentsHeight={contentsHeight}>
-                            {data[item]
-                                ? renderItem({
-                                      item: data[item],
-                                      index: item,
-                                  })
-                                : null}
+                            {renderItem({
+                                item: data[item],
+                                index: item,
+                            })}
                         </ItemContainer>
                     );
                 })}

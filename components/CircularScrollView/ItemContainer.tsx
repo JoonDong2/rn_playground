@@ -4,7 +4,7 @@ import Animated, {
     useAnimatedStyle,
 } from 'react-native-reanimated';
 import { circulateScrollTop } from './ranges';
-const isEqual = require("react-fast-compare");
+const isEqual = require('react-fast-compare');
 
 interface ItemContainerProps {
     children: any;
@@ -19,7 +19,6 @@ const ItemContainer = ({
     children,
     scrollTop,
     itemHeight,
-    itmeLength,
     index,
     contentsHeight,
 }: ItemContainerProps) => {
@@ -29,20 +28,32 @@ const ItemContainer = ({
             contentsHeight: contentsHeight.value,
         });
 
-        const top = circulatedScrollTop
-            // circulatedScrollTop <= 0
-            //     ? circulatedScrollTop +
-            //       firstIndexValue * itemHeight +
-            //       (index - firstIndex) * itemHeight
-            //     : circulatedScrollTop +
-            //       (firstIndexValue - itmeLength) * itemHeight +
-            //       (index - firstIndex) * itemHeight;
+        const firstScrollTop =
+            circulatedScrollTop <= 0
+                ? circulatedScrollTop -
+                  Math.ceil(circulatedScrollTop / itemHeight) * itemHeight
+                : circulatedScrollTop -
+                  Math.ceil(circulatedScrollTop / itemHeight) * itemHeight;
 
-        // console.log(`index: ${index} top: ${top} circulatedScrollTop: ${circulatedScrollTop} firstIndexValue * itemHeight: ${firstIndexValue * itemHeight} (index - firstIndex) * itemHeight: ${(index - firstIndex) * itemHeight}`);
-        // console.log(`index: ${index} top: ${top} firstIndexValue: ${firstIndexValue}`);
         return {
-            top: top || 0,
+            top: firstScrollTop + index * itemHeight,
         };
+
+        // if (circulatedScrollTop <= 0) {
+        //     const firstIndexScrollTop =
+        //         circulatedScrollTop -
+        //         Math.ceil(circulatedScrollTop / itemHeight) * itemHeight;
+        //     return {
+        //         top: firstIndexScrollTop + index * itemHeight,
+        //     };
+        // } else {
+        //     const firstIndexScrollTop =
+        //     circulatedScrollTop -
+        //     Math.ceil(circulatedScrollTop / itemHeight) * itemHeight;
+        //     return {
+        //         top: firstIndexScrollTop + index * itemHeight,
+        //     };
+        // }
     });
 
     return (
