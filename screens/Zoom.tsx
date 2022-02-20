@@ -1,6 +1,3 @@
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -20,32 +17,28 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getSocket } from '../api/socket';
 import ChatItem from '../components/ChatItem';
 import { isAndroid, CHAT_LIST_END_POINT, screen } from '../Constants';
-import { MainStackParamList } from '../navigations/StackNavigation';
-import { RootTabNavigationProp } from '../navigations/TabNavigation';
 import axios from 'axios';
-
-type ZoomRouteProp = RouteProp<RootTabNavigationProp, 'Zoom'>;
-
-type ZoomNavigationProp = CompositeNavigationProp<
-    StackNavigationProp<MainStackParamList, 'Tab'>,
-    BottomTabNavigationProp<RootTabNavigationProp, 'Zoom'>
->;
+import { Socket } from 'socket.io-client';
 
 export interface RoomProps {
     roomName: string;
     peerNickname: string;
 }
 
-type ZoomProps = {
-    route: ZoomRouteProp;
-    navigation: ZoomNavigationProp;
-};
+// type TabStackNavigationProp = StackNavigationProp<MainStackParamList, 'Tab'>;
 
-export default ({
-    route: {
-        params: { openChatModal, closeChatModal },
-    },
-}: ZoomProps) => {
+interface ZoomProps {
+    openChatModal: (props: {
+        socket: Socket;
+        roomName: string;
+        ownerName: string;
+        type: 'owner' | 'visitor';
+    }) => void;
+    closeChatModal: (local?: boolean) => void;
+}
+
+export default ({ openChatModal, closeChatModal }: ZoomProps) => {
+    // const navigation = useNavigation<TabStackNavigationProp>();
     const { top } = useSafeAreaInsets();
 
     const [isInChat, setIsInChat] = useState(false);

@@ -1,9 +1,4 @@
-import {
-    BottomTabNavigationProp,
-    createBottomTabNavigator,
-} from '@react-navigation/bottom-tabs';
-import { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { BottomNavigation } from 'react-native-paper';
 import React, { useCallback, useState } from 'react';
 import { TouchableWithoutFeedback, View } from 'react-native';
 import {
@@ -21,7 +16,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { screen, window } from '../Constants';
 import KakaoWebtoon from '../screens/KakaoWebtoon';
 import Zoom from '../screens/Zoom';
-import { MainStackParamList } from './StackNavigation';
 import { Socket } from 'socket.io-client';
 import ZoomModal from '../components/ZoomModal';
 
@@ -58,21 +52,7 @@ const tabs: {
     },
 ];
 
-const Tab = createBottomTabNavigator<RootTabNavigationProp>();
-
-type TabRouteProp = RouteProp<MainStackParamList, 'Tab'>;
-
-type TabNavigationProp = CompositeNavigationProp<
-    StackNavigationProp<MainStackParamList, 'Tab'>,
-    BottomTabNavigationProp<RootTabNavigationProp, 'Zoom'>
->;
-
-type TabProps = {
-    route: TabRouteProp;
-    navigation: TabNavigationProp;
-};
-
-export default ({ navigation }: TabProps) => {
+export default () => {
     const [roomInfo, setRoomInfo] = useState<
         | {
               socket: Socket;
@@ -322,29 +302,37 @@ export default ({ navigation }: TabProps) => {
         },
     });
 
+    const [routes] = React.useState([
+        { key: 'Zoom', title: '줌 클론'},
+        { key: 'KakaoWebtoon', title: '카카오웹툰 클론' },
+    ]);
+
     return (
         <View
             style={{
                 flex: 1,
                 backgroundColor: '#ffffff',
             }}>
-            <Tab.Navigator
-                screenOptions={{
-                    headerShown: false,
-                    tabBarStyle: {
-                        display: 'none',
-                    },
-                }}>
-                <Tab.Screen
-                    name="Zoom"
-                    component={Zoom}
-                    initialParams={{
-                        openChatModal,
-                        closeChatModal,
-                    }}
-                />
-                <Tab.Screen name="KakaoWebtoon" component={KakaoWebtoon} />
-            </Tab.Navigator>
+            <BottomNavigation
+                style={{ flex: 1 }}
+                barStyle={{ height: 0, display: 'none' }}
+                navigationState={{ index: currentIndex, routes }}
+                onIndexChange={setCurrentIndex}
+                renderScene={({ route }) => {
+                    switch (route.key) {
+                        case 'Zoom':
+                            return (
+                                <Zoom
+                                    openChatModal={openChatModal}
+                                    closeChatModal={closeChatModal}
+                                />
+                            );
+                        case 'KakaoWebtoon':
+                            return <KakaoWebtoon />;
+                    }
+                }}
+                labeled={false}
+            />
 
             {modalVisible && roomInfo && (
                 <PanGestureHandler onGestureEvent={onModalGestureEvent}>
@@ -384,15 +372,6 @@ export default ({ navigation }: TabProps) => {
 
                     const onPress = () => {
                         setCurrentIndex(index);
-                        navigation.navigate(
-                            tab.name,
-                            index === 0
-                                ? {
-                                      openChatModal,
-                                      closeChatModal,
-                                  }
-                                : undefined,
-                        );
                     };
 
                     return (

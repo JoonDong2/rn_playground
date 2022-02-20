@@ -29,7 +29,7 @@ function CircularScrollView<ItemT>({
     data,
     renderItem,
     itemHeight = 80,
-    buffer = 0,
+    buffer = 3,
     style,
 }: CircularScrollViewProps<ItemT>) {
     const scrollTop = useSharedValue(0);
