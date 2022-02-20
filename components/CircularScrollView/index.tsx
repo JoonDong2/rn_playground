@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import {
     PanGestureHandler,
@@ -102,14 +102,16 @@ function CircularScrollView<ItemT>({
         },
     });
 
-    const setFirstIndexScrollTop = useCallback(
-        (newScrollTop: number, delay?: number) => {
-            setTimeout(() => {
-                firstIndexScrollTop.value = newScrollTop;
-            }, delay || 0);
-        },
-        [firstIndexScrollTop],
-    );
+    const buffer = useRef<number | undefined>(undefined);
+    const setFirstIndexScrollTop = useCallback((newScrollTop: number) => {
+        buffer.current = newScrollTop;
+    }, []);
+
+    useEffect(() => {
+        if (!buffer.current) return;
+        firstIndexScrollTop.value = buffer.current;
+        buffer.current = undefined;
+    }, [firstIndexScrollTop, items]);
 
     useAnimatedReaction(
         () => {
@@ -140,7 +142,7 @@ function CircularScrollView<ItemT>({
                         : result.circulatedScrollTop -
                           Math.ceil(result.circulatedScrollTop / itemHeight) *
                               itemHeight;
-                runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop);
+                firstIndexScrollTop.value = newFirstIndexScrollTop;
                 return;
             }
             const circulatedScrollTop = circulateScrollTop({
