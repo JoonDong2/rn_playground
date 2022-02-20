@@ -1,21 +1,16 @@
-import React, { useCallback } from 'react';
-import {
-    StyleProp,
-    TouchableWithoutFeedback,
-    View,
-    ViewStyle,
-} from 'react-native';
+import React, { useCallback, useRef } from 'react';
+import { StyleProp, TouchableWithoutFeedback, ViewStyle } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import Animated from 'react-native-reanimated';
 import { SharedElement } from 'react-navigation-shared-element';
 import { screen } from '../Constants';
+import ItemCover from './ItemCover';
 
 interface SharedItemProps {
     image: string;
     title: string;
     desc: string;
     index: number;
-    selected?: boolean;
     style?: StyleProp<ViewStyle>;
     onPress?: (props: {
         image: string;
@@ -30,13 +25,14 @@ export default ({
     title,
     desc,
     index,
-    selected,
     style,
     onPress: onPressProp,
 }: SharedItemProps) => {
     const onPress = useCallback(() => {
         if (onPressProp) onPressProp({ image, title, desc, index });
     }, [desc, image, index, onPressProp, title]);
+
+    const coverWidth = useRef(screen.width / 1.75).current;
 
     return (
         <TouchableWithoutFeedback onPress={onPress}>
@@ -60,12 +56,11 @@ export default ({
                         },
                     ]}
                     id={`${index}-${image}.left-cover`}>
-                    <View
-                        style={{
-                            width: 100,
-                            height: 100,
-                            backgroundColor: 'green',
-                        }}
+                    <ItemCover
+                        direction="left"
+                        odd={index % 2 === 1}
+                        height={300}
+                        width={coverWidth}
                     />
                 </SharedElement>
                 <SharedElement
@@ -76,12 +71,11 @@ export default ({
                         },
                     ]}
                     id={`${index}-${image}.right-cover`}>
-                    <View
-                        style={{
-                            width: 100,
-                            height: 100,
-                            backgroundColor: 'green',
-                        }}
+                    <ItemCover
+                        direction="right"
+                        odd={index % 2 === 1}
+                        height={300}
+                        width={coverWidth}
                     />
                 </SharedElement>
             </Animated.View>

@@ -6,6 +6,7 @@ import { SharedElement } from 'react-navigation-shared-element';
 import { MainStackParamList } from '../navigations/StackNavigation';
 import FastImage from 'react-native-fast-image';
 import { screen, window } from '../Constants';
+import ItemCover from '../components/ItemCover';
 
 type WebtoonDetailNavigationProp = StackNavigationProp<
     MainStackParamList,
@@ -20,6 +21,7 @@ interface WebtoonDetailProps {
 
 export default ({ route, navigation }: WebtoonDetailProps) => {
     const { image, title, desc, index } = useRef(route.params).current;
+    const coverWidth = useRef(screen.width / 1.75).current;
 
     return (
         <TouchableWithoutFeedback onPress={navigation.goBack}>
@@ -37,12 +39,12 @@ export default ({ route, navigation }: WebtoonDetailProps) => {
                         position: 'absolute',
                     }}
                     id={`${index}-${image}.left-cover`}>
-                    <View
-                        style={{
-                            width: 100,
-                            height: 100,
-                            backgroundColor: 'green',
-                        }}
+                    <ItemCover
+                        direction="left"
+                        odd={index % 2 === 1}
+                        height={window.height}
+                        width={coverWidth}
+                        isDetail
                     />
                 </SharedElement>
                 <SharedElement
@@ -51,12 +53,12 @@ export default ({ route, navigation }: WebtoonDetailProps) => {
                         position: 'absolute',
                     }}
                     id={`${index}-${image}.right-cover`}>
-                    <View
-                        style={{
-                            width: 100,
-                            height: 100,
-                            backgroundColor: 'green',
-                        }}
+                    <ItemCover
+                        direction="right"
+                        odd={index % 2 === 1}
+                        height={window.height}
+                        width={coverWidth}
+                        isDetail
                     />
                 </SharedElement>
             </View>

@@ -29,7 +29,6 @@ export default () => {
     return (
         <Stack.Navigator
             screenOptions={{
-                animationTypeForReplace: 'pop',
                 headerShown: false,
                 presentation: 'modal',
             }}>
@@ -42,11 +41,11 @@ export default () => {
                     transitionSpec: {
                         open: {
                             animation: 'timing',
-                            config: { duration: 200 },
+                            config: { duration: 150 },
                         },
                         close: {
                             animation: 'timing',
-                            config: { duration: 200 },
+                            config: { duration: 150 },
                         },
                     },
                     cardStyleInterpolator: ({ current: { progress } }: any) => {
