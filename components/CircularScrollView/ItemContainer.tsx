@@ -41,6 +41,9 @@ const ItemContainer = ({
                 : circulatedScrollTop +
                   (firstIndexValue - itmeLength) * itemHeight +
                   (index - firstIndex) * itemHeight;
+
+        // console.log(`index: ${index} top: ${top} circulatedScrollTop: ${circulatedScrollTop} firstIndexValue * itemHeight: ${firstIndexValue * itemHeight} (index - firstIndex) * itemHeight: ${(index - firstIndex) * itemHeight}`);
+        // console.log(`index: ${index} top: ${top} firstIndexValue: ${firstIndexValue}`);
         return {
             top: top || 0,
         };
