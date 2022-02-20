@@ -31,10 +31,10 @@ $ npm install -g detox-cli
 빌드 후 테스트
 ```
 $ detox build -c ios // 빌드 후에만 테스트 가능
-$ detox text -c ios
+$ detox test -c ios
 
 $ detox build -c android
-$ detox text -c android
+$ detox test -c android
 ```
 
 #### 개발환경
