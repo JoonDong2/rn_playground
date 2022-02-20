@@ -27,8 +27,15 @@ export const calculateFirstIndex = ({
     });
 
     const pureIndex = Math.floor(-circulatedScrollTop / itemHeight);
-    if (pureIndex < 0) return pureIndex + itemLength;
-    return pureIndex;
+    if (pureIndex < 0)
+        return {
+            firstIndex: pureIndex + itemLength,
+            circulatedScrollTop,
+        };
+    return {
+        firstIndex: pureIndex,
+        circulatedScrollTop,
+    };
 };
 
 export const calculateBoundary = ({
@@ -45,7 +52,7 @@ export const calculateBoundary = ({
     itemLength: number;
 }) => {
     'worklet';
-    const firstIndex = calculateFirstIndex({
+    const { firstIndex, circulatedScrollTop } = calculateFirstIndex({
         scrollTop,
         contentsHeight: contentsHeight,
         itemHeight,
@@ -65,5 +72,5 @@ export const calculateBoundary = ({
         boundary.push((firstIndex + i) % (maxIndex + 1));
     }
 
-    return boundary;
+    return { boundary, circulatedScrollTop };
 };

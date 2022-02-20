@@ -46,16 +46,15 @@ function CircularScrollView<ItemT>({
         const newItemValue = data.length;
         itemLength.value = newItemValue;
 
-        const newBoudary = calculateBoundary({
+        const { boundary } = calculateBoundary({
             scrollTop: 0,
             height: layoutHeight,
             contentsHeight: newContentsHeight,
             itemHeight,
             itemLength: newItemValue,
         });
-        boundary.value = newBoudary;
         // console.log("boundary", newBoudary);
-        setItems(newBoudary);
+        setItems(boundary);
     }, [
         layoutHeight,
         contentsHeight,
@@ -104,20 +103,46 @@ function CircularScrollView<ItemT>({
     });
 
     const setFirstIndexScrollTop = useCallback(
-        (newScrollTop: number) => {
+        (newScrollTop: number, delay?: number) => {
             setTimeout(() => {
                 firstIndexScrollTop.value = newScrollTop;
-            });
+            }, delay || 0);
         },
         [firstIndexScrollTop],
     );
 
     useAnimatedReaction(
         () => {
-            return scrollTop.value;
+            return {
+                scrollTop: scrollTop.value,
+                ...calculateBoundary({
+                    scrollTop: scrollTop.value,
+                    height: height.value,
+                    contentsHeight: contentsHeight.value,
+                    itemHeight,
+                    itemLength: itemLength.value,
+                }),
+            };
         },
         (result, previous) => {
-            if (previous === null || result === previous) return;
+            if (
+                previous === null ||
+                result.scrollTop === previous.scrollTop ||
+                result.boundary.every(
+                    (item, index) => previous.boundary[index] === item,
+                )
+            ) {
+                const newFirstIndexScrollTop =
+                    result.circulatedScrollTop <= 0
+                        ? result.circulatedScrollTop -
+                          Math.ceil(result.circulatedScrollTop / itemHeight) *
+                              itemHeight
+                        : result.circulatedScrollTop -
+                          Math.ceil(result.circulatedScrollTop / itemHeight) *
+                              itemHeight;
+                runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop);
+                return;
+            }
             const circulatedScrollTop = circulateScrollTop({
                 scrollTop: scrollTop.value,
                 contentsHeight: contentsHeight.value,
@@ -130,29 +155,8 @@ function CircularScrollView<ItemT>({
                     : circulatedScrollTop -
                       Math.ceil(circulatedScrollTop / itemHeight) * itemHeight;
 
-            // newScrollTop을 사용하여 화면에 표시될 아이템 인덱스 배열 만들기
-            const newBoundary = calculateBoundary({
-                scrollTop: result,
-                height: height.value,
-                contentsHeight: contentsHeight.value,
-                itemHeight,
-                itemLength: itemLength.value,
-            });
-            runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop);
-            if (
-                newBoundary.every(
-                    (item, index) => boundary.value[index] === item,
-                )
-            ) {
-                return;
-            }
-
-            // console.log("boundary", newBoundary);
-            // runOnJS(setBoundary)(newBoundary)
-            boundary.value = newBoundary;
-
-            runOnJS(setItems)(newBoundary);
-            runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop);
+            runOnJS(setItems)(result.boundary);
+            runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop, 50);
         },
         [scrollTop],
     );
