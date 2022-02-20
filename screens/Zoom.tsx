@@ -312,6 +312,7 @@ export default ({ openChatModal, closeChatModal }: ZoomProps) => {
                                     marginBottom: 15,
                                 }}>
                                 <TextInput
+                                    testID="NicknameInput"
                                     style={{
                                         flex: 1,
                                         textAlign: 'center',
@@ -338,6 +339,7 @@ export default ({ openChatModal, closeChatModal }: ZoomProps) => {
                                     marginBottom: 15,
                                 }}>
                                 <TextInput
+                                    testID="RoomNameInput"
                                     style={{
                                         flex: 1,
                                         textAlign: 'center',
@@ -368,6 +370,7 @@ export default ({ openChatModal, closeChatModal }: ZoomProps) => {
                                     marginBottom: 15,
                                 }}>
                                 <TextInput
+                                    testID="PasswordInput"
                                     style={{
                                         flex: 1,
                                         textAlign: 'center',
