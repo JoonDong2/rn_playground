@@ -139,12 +139,18 @@ function CircularScrollView<ItemT>({
         [scrollTop],
     );
 
+    // console.log("\n\n\n", items, "\n\n\n");
+
     return (
         <PanGestureHandler onGestureEvent={onModalGestureEvent}>
             <Animated.View
-                style={[style, { overflow: 'hidden' }]}
+                style={[
+                    style,
+                    { overflow: 'hidden', backgroundColor: '#000000' },
+                ]}
                 onLayout={onLayout}>
-                {items.map((item, index) => {
+                {items.map((item, index, origin) => {
+                    // console.log("여기", origin, buffer, origin[buffer]);
                     return (
                         // buffer 크기와 동일한 인덱스는 실제 화면에 보이는 첫 번째 인덱스가 된다.
                         <ItemContainer
@@ -152,7 +158,7 @@ function CircularScrollView<ItemT>({
                             key={item}
                             scrollTop={scrollTop}
                             firstIndex={buffer}
-                            firstIndexValue={items[buffer]}
+                            firstIndexValue={origin[buffer]}
                             itemHeight={itemHeight}
                             itmeLength={data.length}
                             index={index}
