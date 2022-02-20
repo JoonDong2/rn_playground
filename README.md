@@ -33,3 +33,8 @@ $ detox text -c ios
 $ detox build -c android
 $ detox text -c android
 ```
+
+#### 개발환경
+* 인텔 맥북 Mac OS: 11.6.1
+* 아이폰 6S iOS 15.1
+* 안드로이드 LG G7 (안드로이드110), 갤럭시 A32(안드로이드 11)
