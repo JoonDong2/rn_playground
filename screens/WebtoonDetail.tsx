@@ -28,6 +28,7 @@ export default ({ route, navigation }: WebtoonDetailProps) => {
             <View style={{ flex: 1 }}>
                 <SharedElement id={`${index}-${image}.image`}>
                     <FastImage
+                        testID="DetailImage"
                         style={{ width: screen.width, height: window.height }}
                         source={{ uri: image }}
                         resizeMode="cover"
