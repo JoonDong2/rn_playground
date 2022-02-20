@@ -4,6 +4,7 @@
 * 비디오 Modal을 아래로 당겨서 최소화 가능
 * 최소화 상태의 비디오 Modal을 위로 당겨서 최대화 가능
 * 최소화 상태의 비디오 Modal을 아래로 당겨서 방 나가기 가능 
+* 모달을 최대화/최소화할 때 Bottom 탭바가 아래 위로 이동 
 * **실제 디바이스에서만** 테스트 가능 (`XCode > Target > rn_playground > Signing & Capabilities`에서 Team 설정 필요)
 
 ## 카카오 웹툰 클론
