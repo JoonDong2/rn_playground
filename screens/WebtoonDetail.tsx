@@ -1,23 +1,20 @@
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
+import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useRef } from 'react';
 import { Text, TouchableWithoutFeedback, View } from 'react-native';
 import { SharedElement } from 'react-navigation-shared-element';
 import { MainStackParamList } from '../navigations/StackNavigation';
-import { RootTabNavigationProp } from '../navigations/TabNavigation';
 
+type WebtoonDetailNavigationProp = StackNavigationProp<
+    MainStackParamList,
+    'WebtoonDetail'
+>;
 type WebtoonDetailRouteProp = RouteProp<MainStackParamList, 'WebtoonDetail'>;
 
-type WebtoonDetailNavigationProp = CompositeNavigationProp<
-    StackNavigationProp<MainStackParamList, 'WebtoonDetail'>,
-    BottomTabNavigationProp<RootTabNavigationProp, 'Zoom'>
->;
-
-type WebtoonDetailProps = {
-    route: WebtoonDetailRouteProp;
+interface WebtoonDetailProps {
     navigation: WebtoonDetailNavigationProp;
-};
+    route: WebtoonDetailRouteProp;
+}
 
 export default ({ route, navigation }: WebtoonDetailProps) => {
     const image = useRef(route.params.image).current;
@@ -30,5 +27,5 @@ export default ({ route, navigation }: WebtoonDetailProps) => {
                 </SharedElement>
             </View>
         </TouchableWithoutFeedback>
-    )
-}
+    );
+};

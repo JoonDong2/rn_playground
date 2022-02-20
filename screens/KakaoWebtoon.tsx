@@ -1,8 +1,8 @@
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import React from 'react';
-import { Text, TouchableWithoutFeedback, View } from 'react-native';
+import { TouchableWithoutFeedback } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { SharedElement } from 'react-navigation-shared-element';
 import CircularScrollView from '../components/CircularScrollView';
 import {
@@ -11,26 +11,16 @@ import {
 } from '../components/CircularScrollView/testData';
 import { screen } from '../Constants';
 import { MainStackParamList } from '../navigations/StackNavigation';
-import { RootTabNavigationProp } from '../navigations/TabNavigation';
 
-type KakaoWebtoonRouteProp = RouteProp<RootTabNavigationProp, 'KakaoWebtoon'>;
+type TabStackNavigationProp = StackNavigationProp<MainStackParamList, 'Tab'>;
 
-type KakaoWebtoonNavigationProp = CompositeNavigationProp<
-    StackNavigationProp<MainStackParamList, 'Tab'>,
-    BottomTabNavigationProp<RootTabNavigationProp, 'KakaoWebtoon'>
->;
-
-type KakaoWebtoonProps = {
-    route: KakaoWebtoonRouteProp;
-    navigation: KakaoWebtoonNavigationProp;
-};
-
-export default ({ navigation }: KakaoWebtoonProps) => {
+export default () => {
+    const navigation = useNavigation<TabStackNavigationProp>();
     return (
         <CircularScrollView
             style={{ flex: 1 }}
-            data={dataWithSpare}
-            itemHeight={200}
+            data={overflowData}
+            itemHeight={300}
             renderItem={({ item, index }) => {
                 return (
                     <TouchableWithoutFeedback
@@ -39,16 +29,16 @@ export default ({ navigation }: KakaoWebtoonProps) => {
                                 image: `${item.color}${index}`,
                             })
                         }>
-                        <View
+                        <Animated.View
                             style={{
                                 width: screen.width,
-                                height: 200,
+                                height: 300,
                                 backgroundColor: item.color,
                             }}>
                             <SharedElement id={`${item.color}${index}`}>
-                                <Text>{index}</Text>
+                                <Animated.Text>{index}</Animated.Text>
                             </SharedElement>
-                        </View>
+                        </Animated.View>
                     </TouchableWithoutFeedback>
                 );
             }}
