@@ -1,5 +1,6 @@
 ## Zoom + YouTube 클론
 * NestJS로 간단히 만든 [joom-server](https://github.com/JoonDong2/joom-server)로 피어간 WebRTC 연결 중개
+* 중개서버는 피어간 연결을 중개하고 바로 연결 해제되고, 이후 WebRTC를 통해 **피어간 비디오 및 오디오 스트림 통신**
 * 리스트를 아래로 당겨서 리스트 새로고침
 * 비디오 Modal을 아래로 당겨서 최소화 가능
 * 최소화 상태의 비디오 Modal을 위로 당겨서 최대화 가능
