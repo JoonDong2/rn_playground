@@ -8,6 +8,9 @@ export type MainStackParamList = {
     KakaoWebtoonDetail: undefined;
     WebtoonDetail: {
         image: string;
+        title: string;
+        desc: string;
+        index: number;
     };
 };
 
@@ -15,8 +18,8 @@ const Stack = createSharedElementStackNavigator<MainStackParamList>();
 
 export default () => {
     const sharedElements = useCallback(route => {
-        const { image } = route.params;
-        return [image];
+        const { image, index } = route.params;
+        return [`${index}-${image}`];
     }, []);
 
     return (

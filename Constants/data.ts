@@ -1,4 +1,10 @@
-export const data = [
+export interface DataProps {
+    image: string;
+    title: string;
+    desc: string;
+}
+
+export const data: DataProps[] = [
     {
         image: 'https://joondong2.github.io/rn_playground/images/1.jpeg',
         title: '제목1',
