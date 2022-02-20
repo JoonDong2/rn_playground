@@ -13,7 +13,7 @@
 * 참조: [react-native-virtualized-waterfall](https://github.com/fengbujue2022/react-native-waterfall)
 * react-native-reanimated V2를 사용해서 구현
 * 아이템, 상세화면 전환간 Shared Transition 적용
-* 한 번 순환할 때마다 깜빡이는 현상이 발생 (수정중.. scrollTop을 순환시킬 때 아이템의 top 값이 순간적으로 튀는 현상)
+* 한 번 순환할 때마다 깜빡이는 현상이 발생 (수정중.. scrollTop을 순환시킬 때 아이템의 top 값이 순간적으로 튀는 현상, firstIndexValue에 이상한 값이 넘어간다. 왜지?)
 * 성능 문제 (버퍼에 비례하여 성능 저하 발생)
 
 ## e2e 테스트
