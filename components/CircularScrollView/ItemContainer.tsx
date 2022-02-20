@@ -10,51 +10,19 @@ interface ItemContainerProps {
     children: any;
     scrollTop: SharedValue<number>;
     itemHeight: number;
-    itmeLength: number;
     index: number;
-    contentsHeight: SharedValue<number>;
+    firstIndexScrollTop: SharedValue<number>;
 }
 
 const ItemContainer = ({
     children,
-    scrollTop,
     itemHeight,
     index,
-    contentsHeight,
+    firstIndexScrollTop,
 }: ItemContainerProps) => {
-    const containerStyle = useAnimatedStyle(() => {
-        const circulatedScrollTop = circulateScrollTop({
-            scrollTop: scrollTop.value,
-            contentsHeight: contentsHeight.value,
-        });
-
-        const firstScrollTop =
-            circulatedScrollTop <= 0
-                ? circulatedScrollTop -
-                  Math.ceil(circulatedScrollTop / itemHeight) * itemHeight
-                : circulatedScrollTop -
-                  Math.ceil(circulatedScrollTop / itemHeight) * itemHeight;
-
-        return {
-            top: firstScrollTop + index * itemHeight,
-        };
-
-        // if (circulatedScrollTop <= 0) {
-        //     const firstIndexScrollTop =
-        //         circulatedScrollTop -
-        //         Math.ceil(circulatedScrollTop / itemHeight) * itemHeight;
-        //     return {
-        //         top: firstIndexScrollTop + index * itemHeight,
-        //     };
-        // } else {
-        //     const firstIndexScrollTop =
-        //     circulatedScrollTop -
-        //     Math.ceil(circulatedScrollTop / itemHeight) * itemHeight;
-        //     return {
-        //         top: firstIndexScrollTop + index * itemHeight,
-        //     };
-        // }
-    });
+    const containerStyle = useAnimatedStyle(() => ({
+        top: firstIndexScrollTop.value + index * itemHeight,
+    }));
 
     return (
         <Animated.View

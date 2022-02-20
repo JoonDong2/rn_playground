@@ -22,8 +22,6 @@ interface CircularScrollViewProps<ItemT> {
     style?: StyleProp<ViewStyle>;
 }
 
-// let contentsHeight: number = 0;
-
 function CircularScrollView<ItemT>({
     data,
     renderItem,
@@ -35,6 +33,7 @@ function CircularScrollView<ItemT>({
     const itemLength = useSharedValue(0);
     const height = useSharedValue(0);
     const boundary = useSharedValue<number[]>([]);
+    const firstIndexScrollTop = useSharedValue(0);
 
     const [items, setItems] = useState<number[]>([]);
 
@@ -104,12 +103,33 @@ function CircularScrollView<ItemT>({
         },
     });
 
+    const setFirstIndexScrollTop = useCallback(
+        (newScrollTop: number) => {
+            setTimeout(() => {
+                firstIndexScrollTop.value = newScrollTop;
+            });
+        },
+        [firstIndexScrollTop],
+    );
+
     useAnimatedReaction(
         () => {
             return scrollTop.value;
         },
         (result, previous) => {
             if (previous === null || result === previous) return;
+            const circulatedScrollTop = circulateScrollTop({
+                scrollTop: scrollTop.value,
+                contentsHeight: contentsHeight.value,
+            });
+
+            const newFirstIndexScrollTop =
+                circulatedScrollTop <= 0
+                    ? circulatedScrollTop -
+                      Math.ceil(circulatedScrollTop / itemHeight) * itemHeight
+                    : circulatedScrollTop -
+                      Math.ceil(circulatedScrollTop / itemHeight) * itemHeight;
+
             // newScrollTop을 사용하여 화면에 표시될 아이템 인덱스 배열 만들기
             const newBoundary = calculateBoundary({
                 scrollTop: result,
@@ -118,7 +138,7 @@ function CircularScrollView<ItemT>({
                 itemHeight,
                 itemLength: itemLength.value,
             });
-
+            runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop);
             if (
                 newBoundary.every(
                     (item, index) => boundary.value[index] === item,
@@ -128,8 +148,11 @@ function CircularScrollView<ItemT>({
             }
 
             // console.log("boundary", newBoundary);
+            // runOnJS(setBoundary)(newBoundary)
             boundary.value = newBoundary;
+
             runOnJS(setItems)(newBoundary);
+            runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop);
         },
         [scrollTop],
     );
@@ -145,17 +168,13 @@ function CircularScrollView<ItemT>({
                 ]}
                 onLayout={onLayout}>
                 {items.map((item, index) => {
-                    // console.log("여기", origin, buffer, origin[buffer]);
                     return (
-                        // buffer 크기와 동일한 인덱스는 실제 화면에 보이는 첫 번째 인덱스가 된다.
                         <ItemContainer
-                            // style={testStyle}
                             key={item}
                             scrollTop={scrollTop}
                             itemHeight={itemHeight}
-                            itmeLength={data.length}
-                            index={index}
-                            contentsHeight={contentsHeight}>
+                            firstIndexScrollTop={firstIndexScrollTop}
+                            index={index}>
                             {renderItem({
                                 item: data[item],
                                 index: item,
