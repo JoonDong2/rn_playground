@@ -24,11 +24,39 @@ export default ({ route, navigation }: WebtoonDetailProps) => {
     return (
         <TouchableWithoutFeedback onPress={navigation.goBack}>
             <View style={{ flex: 1 }}>
-                <SharedElement id={`${index}-${image}`}>
+                <SharedElement id={`${index}-${image}.image`}>
                     <FastImage
                         style={{ width: screen.width, height: window.height }}
                         source={{ uri: image }}
                         resizeMode="cover"
+                    />
+                </SharedElement>
+                <SharedElement
+                    style={{
+                        overflow: 'hidden',
+                        position: 'absolute',
+                    }}
+                    id={`${index}-${image}.left-cover`}>
+                    <View
+                        style={{
+                            width: 100,
+                            height: 100,
+                            backgroundColor: 'green',
+                        }}
+                    />
+                </SharedElement>
+                <SharedElement
+                    style={{
+                        right: 0,
+                        position: 'absolute',
+                    }}
+                    id={`${index}-${image}.right-cover`}>
+                    <View
+                        style={{
+                            width: 100,
+                            height: 100,
+                            backgroundColor: 'green',
+                        }}
                     />
                 </SharedElement>
             </View>

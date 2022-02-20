@@ -19,7 +19,11 @@ const Stack = createSharedElementStackNavigator<MainStackParamList>();
 export default () => {
     const sharedElements = useCallback(route => {
         const { image, index } = route.params;
-        return [`${index}-${image}`];
+        return [
+            `${index}-${image}.image`,
+            `${index}-${image}.left-cover`,
+            `${index}-${image}.right-cover`,
+        ];
     }, []);
 
     return (
