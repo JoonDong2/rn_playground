@@ -19,7 +19,6 @@ interface CircularScrollViewProps<ItemT> {
     data: ItemT[];
     renderItem: (props: { item: ItemT; index: number }) => React.ReactElement;
     itemHeight: number;
-    buffer?: number;
     style?: StyleProp<ViewStyle>;
 }
 
@@ -29,7 +28,6 @@ function CircularScrollView<ItemT>({
     data,
     renderItem,
     itemHeight = 80,
-    buffer = 0,
     style,
 }: CircularScrollViewProps<ItemT>) {
     const scrollTop = useSharedValue(0);
@@ -55,7 +53,6 @@ function CircularScrollView<ItemT>({
             contentsHeight: newContentsHeight,
             itemHeight,
             itemLength: newItemValue,
-            buffer,
         });
         boundary.value = newBoudary;
         // console.log("boundary", newBoudary);
@@ -68,7 +65,6 @@ function CircularScrollView<ItemT>({
         itemHeight,
         itemLength,
         boundary,
-        buffer,
     ]);
 
     const onLayout = useCallback(
@@ -121,7 +117,6 @@ function CircularScrollView<ItemT>({
                 contentsHeight: contentsHeight.value,
                 itemHeight,
                 itemLength: itemLength.value,
-                buffer,
             });
 
             if (
@@ -149,7 +144,7 @@ function CircularScrollView<ItemT>({
                     { overflow: 'hidden', backgroundColor: '#000000' },
                 ]}
                 onLayout={onLayout}>
-                {items.map((item, index, origin) => {
+                {items.map((item, index) => {
                     // console.log("여기", origin, buffer, origin[buffer]);
                     return (
                         // buffer 크기와 동일한 인덱스는 실제 화면에 보이는 첫 번째 인덱스가 된다.
@@ -157,8 +152,6 @@ function CircularScrollView<ItemT>({
                             // style={testStyle}
                             key={item}
                             scrollTop={scrollTop}
-                            firstIndex={buffer}
-                            firstIndexValue={origin[buffer]}
                             itemHeight={itemHeight}
                             itmeLength={data.length}
                             index={index}

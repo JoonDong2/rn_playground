@@ -37,17 +37,15 @@ export const calculateBoundary = ({
     contentsHeight,
     itemHeight,
     itemLength,
-    buffer = 0,
 }: {
     scrollTop: number;
     height: number;
     contentsHeight: number;
     itemHeight: number;
     itemLength: number;
-    buffer: number;
 }) => {
     'worklet';
-    let firstIndex = calculateFirstIndex({
+    const firstIndex = calculateFirstIndex({
         scrollTop,
         contentsHeight: contentsHeight,
         itemHeight,
@@ -56,17 +54,11 @@ export const calculateBoundary = ({
 
     const maxIndex = itemLength - 1;
 
-    if (buffer) {
-        firstIndex = ((firstIndex - buffer + 1) % maxIndex) + maxIndex;
-    }
-
-    const doubleBuffer = buffer * 2;
     const pureOffsetCount = Math.ceil(height / itemHeight);
-    const offsetCount =
-        Math.ceil(
-            (height - (pureOffsetCount - 1) * itemHeight) / itemHeight +
-                pureOffsetCount,
-        ) + doubleBuffer;
+    const offsetCount = Math.ceil(
+        (height - (pureOffsetCount - 1) * itemHeight) / itemHeight +
+            pureOffsetCount,
+    );
 
     const boundary = [];
     for (let i = 0; i < offsetCount; i++) {

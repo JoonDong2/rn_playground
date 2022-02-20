@@ -9,8 +9,6 @@ const isEqual = require("react-fast-compare");
 interface ItemContainerProps {
     children: any;
     scrollTop: SharedValue<number>;
-    firstIndex: number;
-    firstIndexValue: number;
     itemHeight: number;
     itmeLength: number;
     index: number;
@@ -20,8 +18,6 @@ interface ItemContainerProps {
 const ItemContainer = ({
     children,
     scrollTop,
-    firstIndex,
-    firstIndexValue,
     itemHeight,
     itmeLength,
     index,
@@ -33,14 +29,14 @@ const ItemContainer = ({
             contentsHeight: contentsHeight.value,
         });
 
-        const top =
-            circulatedScrollTop <= 0
-                ? circulatedScrollTop +
-                  firstIndexValue * itemHeight +
-                  (index - firstIndex) * itemHeight
-                : circulatedScrollTop +
-                  (firstIndexValue - itmeLength) * itemHeight +
-                  (index - firstIndex) * itemHeight;
+        const top = circulatedScrollTop
+            // circulatedScrollTop <= 0
+            //     ? circulatedScrollTop +
+            //       firstIndexValue * itemHeight +
+            //       (index - firstIndex) * itemHeight
+            //     : circulatedScrollTop +
+            //       (firstIndexValue - itmeLength) * itemHeight +
+            //       (index - firstIndex) * itemHeight;
 
         // console.log(`index: ${index} top: ${top} circulatedScrollTop: ${circulatedScrollTop} firstIndexValue * itemHeight: ${firstIndexValue * itemHeight} (index - firstIndex) * itemHeight: ${(index - firstIndex) * itemHeight}`);
         // console.log(`index: ${index} top: ${top} firstIndexValue: ${firstIndexValue}`);
