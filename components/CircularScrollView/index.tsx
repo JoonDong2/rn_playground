@@ -29,7 +29,7 @@ function CircularScrollView<ItemT>({
     data,
     renderItem,
     itemHeight = 80,
-    buffer = 3,
+    buffer = 0,
     style,
 }: CircularScrollViewProps<ItemT>) {
     const scrollTop = useSharedValue(0);
@@ -123,27 +123,20 @@ function CircularScrollView<ItemT>({
                 itemLength: itemLength.value,
                 buffer,
             });
-            // console.log("boundary", newBoundary);
-            boundary.value = newBoundary;
-        },
-        [scrollTop],
-    );
 
-    useAnimatedReaction(
-        () => {
-            return boundary.value;
-        },
-        (result, previous) => {
             if (
-                previous === null ||
-                result.length === 0 ||
-                result.every((item, index) => previous[index] === item)
+                newBoundary.every(
+                    (item, index) => boundary.value[index] === item,
+                )
             ) {
                 return;
             }
-            runOnJS(setItems)(result);
+
+            // console.log("boundary", newBoundary);
+            boundary.value = newBoundary;
+            runOnJS(setItems)(newBoundary);
         },
-        [boundary],
+        [scrollTop],
     );
 
     return (
@@ -156,7 +149,7 @@ function CircularScrollView<ItemT>({
                         // buffer 크기와 동일한 인덱스는 실제 화면에 보이는 첫 번째 인덱스가 된다.
                         <ItemContainer
                             // style={testStyle}
-                            key={`${item}${index}`}
+                            key={item}
                             scrollTop={scrollTop}
                             firstIndex={buffer}
                             firstIndexValue={items[buffer]}

@@ -4,6 +4,7 @@ import Animated, {
     useAnimatedStyle,
 } from 'react-native-reanimated';
 import { circulateScrollTop } from './ranges';
+const isEqual = require("react-fast-compare");
 
 interface ItemContainerProps {
     children: any;
@@ -16,7 +17,7 @@ interface ItemContainerProps {
     contentsHeight: SharedValue<number>;
 }
 
-export default ({
+const ItemContainer = ({
     children,
     scrollTop,
     firstIndex,
@@ -31,6 +32,7 @@ export default ({
             scrollTop: scrollTop.value,
             contentsHeight: contentsHeight.value,
         });
+
         const top =
             circulatedScrollTop <= 0
                 ? circulatedScrollTop +
@@ -56,3 +58,5 @@ export default ({
         </Animated.View>
     );
 };
+
+export default React.memo(ItemContainer, isEqual);
