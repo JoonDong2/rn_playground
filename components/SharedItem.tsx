@@ -1,5 +1,10 @@
 import React, { useCallback, useRef } from 'react';
-import { StyleProp, TouchableWithoutFeedback, ViewStyle } from 'react-native';
+import {
+    StyleProp,
+    Text,
+    TouchableWithoutFeedback,
+    ViewStyle,
+} from 'react-native';
 import FastImage from 'react-native-fast-image';
 import Animated from 'react-native-reanimated';
 import { SharedElement } from 'react-navigation-shared-element';
@@ -78,6 +83,28 @@ export default ({
                         width={coverWidth}
                     />
                 </SharedElement>
+                <Text
+                    style={{
+                        color: '#ffffff',
+                        fontWeight: 'bold',
+                        fontSize: 20,
+                        position: 'absolute',
+                        top: 100,
+                        left: 30,
+                    }}>
+                    {title}
+                </Text>
+                <Text
+                    style={{
+                        color: '#acacac',
+                        fontWeight: 'bold',
+                        fontSize: 16,
+                        position: 'absolute',
+                        top: 130,
+                        left: 30,
+                    }}>
+                    {desc}
+                </Text>
             </Animated.View>
         </TouchableWithoutFeedback>
     );
