@@ -35,7 +35,13 @@ function CircularScrollView<ItemT>({
     const boundary = useSharedValue<number[]>([]);
     const firstIndexScrollTop = useSharedValue(0);
 
-    const [items, setItems] = useState<number[]>([]);
+    const [items, setItemsInfo] = useState<{
+        itemsInfo: number[];
+        firstItemScrollTop: number;
+    }>({
+        itemsInfo: [],
+        firstItemScrollTop: 0,
+    });
 
     const [layoutHeight, setLayoutHeight] = useState(0);
 
@@ -46,7 +52,7 @@ function CircularScrollView<ItemT>({
         const newItemValue = data.length;
         itemLength.value = newItemValue;
 
-        const { boundary } = calculateBoundary({
+        const boundary = calculateBoundary({
             scrollTop: 0,
             height: layoutHeight,
             contentsHeight: newContentsHeight,
@@ -54,7 +60,7 @@ function CircularScrollView<ItemT>({
             itemLength: newItemValue,
         });
         // console.log("boundary", newBoudary);
-        setItems(boundary);
+        setItemsInfo({ itemsInfo: boundary, firstItemScrollTop: 0 });
     }, [
         layoutHeight,
         contentsHeight,
@@ -102,63 +108,61 @@ function CircularScrollView<ItemT>({
         },
     });
 
-    const buffer = useRef<number | undefined>(undefined);
-    const setFirstIndexScrollTop = useCallback((newScrollTop: number) => {
-        buffer.current = newScrollTop;
-    }, []);
-
-    useEffect(() => {
-        if (!buffer.current) return;
-        firstIndexScrollTop.value = buffer.current;
-        buffer.current = undefined;
-    }, [firstIndexScrollTop, items]);
+    const setFirstIndexScrollTop = useCallback(
+        async (scrollTop: number, items?: number[]) => {
+            if (items) {
+                setItemsInfo({
+                    itemsInfo: items,
+                    firstItemScrollTop: scrollTop,
+                });
+                setItemsInfo({
+                    itemsInfo: items,
+                    firstItemScrollTop: 0,
+                });
+            }
+            firstIndexScrollTop.value = scrollTop;
+        },
+        [firstIndexScrollTop],
+    );
 
     useAnimatedReaction(
         () => {
-            return {
-                scrollTop: scrollTop.value,
-                ...calculateBoundary({
-                    scrollTop: scrollTop.value,
-                    height: height.value,
-                    contentsHeight: contentsHeight.value,
-                    itemHeight,
-                    itemLength: itemLength.value,
-                }),
-            };
-        },
-        (result, previous) => {
-            if (
-                previous === null ||
-                result.scrollTop === previous.scrollTop ||
-                result.boundary.every(
-                    (item, index) => previous.boundary[index] === item,
-                )
-            ) {
-                const newFirstIndexScrollTop =
-                    result.circulatedScrollTop <= 0
-                        ? result.circulatedScrollTop -
-                          Math.ceil(result.circulatedScrollTop / itemHeight) *
-                              itemHeight
-                        : result.circulatedScrollTop -
-                          Math.ceil(result.circulatedScrollTop / itemHeight) *
-                              itemHeight;
-                firstIndexScrollTop.value = newFirstIndexScrollTop;
-                return;
-            }
             const circulatedScrollTop = circulateScrollTop({
                 scrollTop: scrollTop.value,
                 contentsHeight: contentsHeight.value,
             });
 
-            const newFirstIndexScrollTop =
-                circulatedScrollTop <= 0
-                    ? circulatedScrollTop -
-                      Math.ceil(circulatedScrollTop / itemHeight) * itemHeight
-                    : circulatedScrollTop -
-                      Math.ceil(circulatedScrollTop / itemHeight) * itemHeight;
+            const boundary = calculateBoundary({
+                scrollTop: circulatedScrollTop,
+                height: height.value,
+                contentsHeight: contentsHeight.value,
+                itemHeight,
+                itemLength: data.length,
+            });
 
-            runOnJS(setItems)(result.boundary);
-            runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop, 50);
+            return { scrollTop: circulatedScrollTop, boundary };
+        },
+        (result, previous) => {
+            if (!previous) return;
+
+            const { boundary: oldBoundary } = previous;
+            const { scrollTop, boundary: newBoundary } = result;
+            const firstIndexScrollTop =
+                scrollTop <= 0
+                    ? scrollTop - Math.ceil(scrollTop / itemHeight) * itemHeight
+                    : scrollTop -
+                      Math.ceil(scrollTop / itemHeight) * itemHeight;
+
+            if (
+                newBoundary.every((item, index) => oldBoundary[index] === item)
+            ) {
+                runOnJS(setFirstIndexScrollTop)(firstIndexScrollTop);
+                return;
+            }
+
+            runOnJS(setFirstIndexScrollTop)(firstIndexScrollTop, [
+                ...result.boundary,
+            ]);
         },
         [scrollTop],
     );
@@ -173,13 +177,16 @@ function CircularScrollView<ItemT>({
                     { overflow: 'hidden', backgroundColor: '#000000' },
                 ]}
                 onLayout={onLayout}>
-                {items.map((item, index) => {
+                {items.itemsInfo.map((item, index) => {
                     return (
                         <ItemContainer
                             key={item}
-                            scrollTop={scrollTop}
                             itemHeight={itemHeight}
-                            firstIndexScrollTop={firstIndexScrollTop}
+                            firstIndexScrollTop={
+                                items.firstItemScrollTop
+                                    ? { value: items.firstItemScrollTop }
+                                    : firstIndexScrollTop
+                            }
                             index={index}>
                             {renderItem({
                                 item: data[item],

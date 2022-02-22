@@ -3,12 +3,10 @@ import Animated, {
     SharedValue,
     useAnimatedStyle,
 } from 'react-native-reanimated';
-import { circulateScrollTop } from './ranges';
 const isEqual = require('react-fast-compare');
 
 interface ItemContainerProps {
     children: any;
-    scrollTop: SharedValue<number>;
     itemHeight: number;
     index: number;
     firstIndexScrollTop: SharedValue<number>;
