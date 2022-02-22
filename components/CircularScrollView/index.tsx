@@ -115,10 +115,10 @@ function CircularScrollView<ItemT>({
                     items: items,
                     firstItemScrollTop: scrollTop,
                 });
-                setItemsInfo({
-                    items: items,
-                    firstItemScrollTop: 0,
-                });
+                // setItemsInfo({
+                //     items: items,
+                //     firstItemScrollTop: 0,
+                // });
             }
             firstIndexScrollTop.value = scrollTop;
         },
@@ -182,11 +182,8 @@ function CircularScrollView<ItemT>({
                         <ItemContainer
                             key={item}
                             itemHeight={itemHeight}
-                            firstIndexScrollTop={
-                                itemsInfo.firstItemScrollTop
-                                    ? { value: itemsInfo.firstItemScrollTop }
-                                    : firstIndexScrollTop
-                            }
+                            firstIndexScrollTop={firstIndexScrollTop}
+                            firstIndexScrollTopState={itemsInfo.firstItemScrollTop}
                             index={index}>
                             {renderItem({
                                 item: data[item],

@@ -10,6 +10,7 @@ interface ItemContainerProps {
     itemHeight: number;
     index: number;
     firstIndexScrollTop: SharedValue<number>;
+    firstIndexScrollTopState: number;
 }
 
 const ItemContainer = ({
@@ -17,10 +18,14 @@ const ItemContainer = ({
     itemHeight,
     index,
     firstIndexScrollTop,
+    firstIndexScrollTopState,
 }: ItemContainerProps) => {
-    const containerStyle = useAnimatedStyle(() => ({
-        top: firstIndexScrollTop.value + index * itemHeight,
-    }));
+    const containerStyle = useAnimatedStyle(
+        () => ({
+            top: firstIndexScrollTop.value + index * itemHeight,
+        }),
+        [firstIndexScrollTopState],
+    );
 
     return (
         <Animated.View
