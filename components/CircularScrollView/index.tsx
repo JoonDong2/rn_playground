@@ -20,6 +20,7 @@ interface CircularScrollViewProps<ItemT> {
     renderItem: (props: { item: ItemT; index: number }) => React.ReactElement;
     itemHeight: number;
     style?: StyleProp<ViewStyle>;
+    buffer?: number;
 }
 
 function CircularScrollView<ItemT>({
@@ -27,6 +28,7 @@ function CircularScrollView<ItemT>({
     renderItem,
     itemHeight = 80,
     style,
+    buffer = 1,
 }: CircularScrollViewProps<ItemT>) {
     const scrollTop = useSharedValue(0);
     const contentsHeight = useSharedValue(0);
@@ -52,8 +54,9 @@ function CircularScrollView<ItemT>({
             contentsHeight: newContentsHeight,
             itemHeight,
             itemLength: newItemValue,
+            buffer,
         });
-        // console.log("boundary", newBoudary);
+        // console.log('boundary', boundary);
         setItems(boundary);
     }, [
         layoutHeight,
@@ -63,6 +66,7 @@ function CircularScrollView<ItemT>({
         itemHeight,
         itemLength,
         boundary,
+        buffer,
     ]);
 
     const onLayout = useCallback(
@@ -128,6 +132,7 @@ function CircularScrollView<ItemT>({
                 contentsHeight: contentsHeight.value,
                 itemHeight,
                 itemLength: data.length,
+                buffer,
             });
 
             return { scrollTop: circulatedScrollTop, boundary };
@@ -138,10 +143,8 @@ function CircularScrollView<ItemT>({
             const { boundary: oldBoundary } = previous;
             const { scrollTop, boundary: newBoundary } = result;
             const firstIndexScrollTop =
-                scrollTop <= 0
-                    ? scrollTop - Math.ceil(scrollTop / itemHeight) * itemHeight
-                    : scrollTop -
-                      Math.ceil(scrollTop / itemHeight) * itemHeight;
+                scrollTop -
+                (Math.ceil(scrollTop / itemHeight) + buffer) * itemHeight;
 
             if (
                 newBoundary.every((item, index) => oldBoundary[index] === item)
@@ -150,11 +153,13 @@ function CircularScrollView<ItemT>({
                 return;
             }
 
+            // console.log('boundary:', newBoundary);
+
             runOnJS(setFirstIndexScrollTop)(firstIndexScrollTop, [
                 ...result.boundary,
             ]);
         },
-        [scrollTop],
+        [scrollTop, items],
     );
 
     // console.log('\n\n\n', items, '\n\n\n');
