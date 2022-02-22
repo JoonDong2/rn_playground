@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import {
     PanGestureHandler,
@@ -35,11 +35,11 @@ function CircularScrollView<ItemT>({
     const boundary = useSharedValue<number[]>([]);
     const firstIndexScrollTop = useSharedValue(0);
 
-    const [items, setItemsInfo] = useState<{
-        itemsInfo: number[];
+    const [itemsInfo, setItemsInfo] = useState<{
+        items: number[];
         firstItemScrollTop: number;
     }>({
-        itemsInfo: [],
+        items: [],
         firstItemScrollTop: 0,
     });
 
@@ -60,7 +60,7 @@ function CircularScrollView<ItemT>({
             itemLength: newItemValue,
         });
         // console.log("boundary", newBoudary);
-        setItemsInfo({ itemsInfo: boundary, firstItemScrollTop: 0 });
+        setItemsInfo({ items: boundary, firstItemScrollTop: 0 });
     }, [
         layoutHeight,
         contentsHeight,
@@ -112,11 +112,11 @@ function CircularScrollView<ItemT>({
         async (scrollTop: number, items?: number[]) => {
             if (items) {
                 setItemsInfo({
-                    itemsInfo: items,
+                    items: items,
                     firstItemScrollTop: scrollTop,
                 });
                 setItemsInfo({
-                    itemsInfo: items,
+                    items: items,
                     firstItemScrollTop: 0,
                 });
             }
@@ -177,14 +177,14 @@ function CircularScrollView<ItemT>({
                     { overflow: 'hidden', backgroundColor: '#000000' },
                 ]}
                 onLayout={onLayout}>
-                {items.itemsInfo.map((item, index) => {
+                {itemsInfo.items.map((item, index) => {
                     return (
                         <ItemContainer
                             key={item}
                             itemHeight={itemHeight}
                             firstIndexScrollTop={
-                                items.firstItemScrollTop
-                                    ? { value: items.firstItemScrollTop }
+                                itemsInfo.firstItemScrollTop
+                                    ? { value: itemsInfo.firstItemScrollTop }
                                     : firstIndexScrollTop
                             }
                             index={index}>
