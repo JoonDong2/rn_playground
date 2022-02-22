@@ -10,7 +10,7 @@ interface ItemContainerProps {
     itemHeight: number;
     index: number;
     firstIndexScrollTop: SharedValue<number>;
-    firstIndexScrollTopState: number;
+    workletRefresh?: any;
 }
 
 const ItemContainer = ({
@@ -18,13 +18,13 @@ const ItemContainer = ({
     itemHeight,
     index,
     firstIndexScrollTop,
-    firstIndexScrollTopState,
+    workletRefresh,
 }: ItemContainerProps) => {
     const containerStyle = useAnimatedStyle(
         () => ({
             top: firstIndexScrollTop.value + index * itemHeight,
         }),
-        [firstIndexScrollTopState],
+        [workletRefresh],
     );
 
     return (

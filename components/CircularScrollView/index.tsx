@@ -35,13 +35,7 @@ function CircularScrollView<ItemT>({
     const boundary = useSharedValue<number[]>([]);
     const firstIndexScrollTop = useSharedValue(0);
 
-    const [itemsInfo, setItemsInfo] = useState<{
-        items: number[];
-        firstItemScrollTop: number;
-    }>({
-        items: [],
-        firstItemScrollTop: 0,
-    });
+    const [items, setItems] = useState<number[]>([]);
 
     const [layoutHeight, setLayoutHeight] = useState(0);
 
@@ -60,7 +54,7 @@ function CircularScrollView<ItemT>({
             itemLength: newItemValue,
         });
         // console.log("boundary", newBoudary);
-        setItemsInfo({ items: boundary, firstItemScrollTop: 0 });
+        setItems(boundary);
     }, [
         layoutHeight,
         contentsHeight,
@@ -84,41 +78,37 @@ function CircularScrollView<ItemT>({
         {
             firstScrollTop: number;
         }
-    >({
-        onStart: (_, ctx) => {
-            cancelAnimation(scrollTop);
-            ctx.firstScrollTop = scrollTop.value;
+    >(
+        {
+            onStart: (_, ctx) => {
+                cancelAnimation(scrollTop);
+                ctx.firstScrollTop = scrollTop.value;
+            },
+            onActive: (event, ctx) => {
+                scrollTop.value = ctx.firstScrollTop + event.translationY;
+            },
+            onEnd: event => {
+                scrollTop.value = withDecay(
+                    {
+                        velocity: event.velocityY,
+                    },
+                    isFinished => {
+                        if (!isFinished) return;
+                        scrollTop.value = circulateScrollTop({
+                            scrollTop: scrollTop.value,
+                            contentsHeight: contentsHeight.value,
+                        });
+                    },
+                );
+            },
         },
-        onActive: (event, ctx) => {
-            scrollTop.value = ctx.firstScrollTop + event.translationY;
-        },
-        onEnd: event => {
-            scrollTop.value = withDecay(
-                {
-                    velocity: event.velocityY,
-                },
-                isFinished => {
-                    if (!isFinished) return;
-                    scrollTop.value = circulateScrollTop({
-                        scrollTop: scrollTop.value,
-                        contentsHeight: contentsHeight.value,
-                    });
-                },
-            );
-        },
-    });
+        [items],
+    );
 
     const setFirstIndexScrollTop = useCallback(
         async (scrollTop: number, items?: number[]) => {
             if (items) {
-                setItemsInfo({
-                    items: items,
-                    firstItemScrollTop: scrollTop,
-                });
-                // setItemsInfo({
-                //     items: items,
-                //     firstItemScrollTop: 0,
-                // });
+                setItems(items);
             }
             firstIndexScrollTop.value = scrollTop;
         },
@@ -177,13 +167,13 @@ function CircularScrollView<ItemT>({
                     { overflow: 'hidden', backgroundColor: '#000000' },
                 ]}
                 onLayout={onLayout}>
-                {itemsInfo.items.map((item, index) => {
+                {items.map((item, index) => {
                     return (
                         <ItemContainer
                             key={item}
                             itemHeight={itemHeight}
                             firstIndexScrollTop={firstIndexScrollTop}
-                            firstIndexScrollTopState={itemsInfo.firstItemScrollTop}
+                            workletRefresh={items}
                             index={index}>
                             {renderItem({
                                 item: data[item],
