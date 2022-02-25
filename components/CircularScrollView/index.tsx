@@ -13,6 +13,7 @@ import Animated, {
     withDecay,
 } from 'react-native-reanimated';
 import ItemContainer from './ItemContainer';
+import { getBoundaryWithOrder, initializeBoundary } from './optimizer';
 import { calculateBoundary, circulateScrollTop } from './ranges';
 
 interface CircularScrollViewProps<ItemT> {
@@ -37,7 +38,7 @@ function CircularScrollView<ItemT>({
     const boundary = useSharedValue<number[]>([]);
     const firstIndexScrollTop = useSharedValue(0);
 
-    const [items, setItems] = useState<number[]>([]);
+    const [items, setItems] = useState<{ value: number; order: number }[]>([]);
 
     const [layoutHeight, setLayoutHeight] = useState(0);
 
@@ -57,7 +58,7 @@ function CircularScrollView<ItemT>({
             buffer,
         });
         // console.log('boundary', boundary);
-        setItems(boundary);
+        setItems(initializeBoundary(boundary));
     }, [
         layoutHeight,
         contentsHeight,
@@ -110,13 +111,15 @@ function CircularScrollView<ItemT>({
     );
 
     const setFirstIndexScrollTop = useCallback(
-        async (scrollTop: number, items?: number[]) => {
-            if (items) {
-                setItems(items);
+        async (scrollTop: number, boundary?: number[]) => {
+            if (boundary) {
+                setItems(prev =>
+                    getBoundaryWithOrder(boundary, prev, data.length - 1),
+                );
             }
             firstIndexScrollTop.value = scrollTop;
         },
-        [firstIndexScrollTop],
+        [data.length, firstIndexScrollTop],
     );
 
     useAnimatedReaction(
@@ -155,9 +158,10 @@ function CircularScrollView<ItemT>({
 
             // console.log('boundary:', newBoundary);
 
-            runOnJS(setFirstIndexScrollTop)(firstIndexScrollTop, [
-                ...result.boundary,
-            ]);
+            runOnJS(setFirstIndexScrollTop)(
+                firstIndexScrollTop,
+                result.boundary,
+            );
         },
         [scrollTop, items],
     );
@@ -175,14 +179,14 @@ function CircularScrollView<ItemT>({
                 {items.map((item, index) => {
                     return (
                         <ItemContainer
-                            key={item}
+                            key={`${item.value}-${item.order}`}
                             itemHeight={itemHeight}
                             firstIndexScrollTop={firstIndexScrollTop}
                             workletRefresh={items}
                             index={index}>
                             {renderItem({
-                                item: data[item],
-                                index: item,
+                                item: data[item.value],
+                                index: item.value,
                             })}
                         </ItemContainer>
                     );

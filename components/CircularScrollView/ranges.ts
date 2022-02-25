@@ -40,13 +40,12 @@ export const calculateBoundary = ({
     buffer: number;
 }) => {
     'worklet';
-    const firstIndex =
-        calculateFirstIndex({
-            scrollTop,
-            itemHeight,
-            itemLength: itemLength,
-            buffer,
-        })
+    const firstIndex = calculateFirstIndex({
+        scrollTop,
+        itemHeight,
+        itemLength: itemLength,
+        buffer,
+    });
 
     const doubleBuffer = buffer * 2;
     const maxIndex = itemLength - 1;
