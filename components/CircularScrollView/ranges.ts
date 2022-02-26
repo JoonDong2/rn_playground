@@ -21,7 +21,8 @@ export const calculateFirstIndex = ({
     buffer: number;
 }) => {
     'worklet';
-    const pureIndex = Math.floor(-scrollTop / itemHeight) - buffer;
+    const pureIndex =
+        (Math.floor(-scrollTop / itemHeight) - buffer) % itemLength;
     return pureIndex < 0 ? pureIndex + itemLength : pureIndex;
 };
 
