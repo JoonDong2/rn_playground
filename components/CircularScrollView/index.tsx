@@ -18,7 +18,11 @@ import { calculateBoundary, circulateScrollTop } from './ranges';
 
 interface CircularScrollViewProps<ItemT> {
     data: ItemT[];
-    renderItem: (props: { item: ItemT; index: number }) => React.ReactElement;
+    renderItem: (props: {
+        item: ItemT;
+        index: number;
+        order: number;
+    }) => React.ReactElement;
     itemHeight: number;
     style?: StyleProp<ViewStyle>;
     buffer?: number;
@@ -29,7 +33,7 @@ function CircularScrollView<ItemT>({
     renderItem,
     itemHeight = 80,
     style,
-    buffer = 1,
+    buffer = 2,
 }: CircularScrollViewProps<ItemT>) {
     const scrollTop = useSharedValue(0);
     const contentsHeight = useSharedValue(0);
@@ -187,6 +191,7 @@ function CircularScrollView<ItemT>({
                             {renderItem({
                                 item: data[item.value],
                                 index: item.value,
+                                order: item.order,
                             })}
                         </ItemContainer>
                     );
