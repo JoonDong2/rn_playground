@@ -33,7 +33,7 @@ function CircularScrollView<ItemT>({
     renderItem,
     itemHeight = 80,
     style,
-    buffer = 2,
+    buffer = 1,
 }: CircularScrollViewProps<ItemT>) {
     const scrollTop = useSharedValue(0);
     const contentsHeight = useSharedValue(0);
@@ -109,7 +109,7 @@ function CircularScrollView<ItemT>({
                 );
             },
         },
-        [items],
+        [firstIndexScrollTop],
     );
 
     const setFirstIndexScrollTop = useCallback(
@@ -165,7 +165,7 @@ function CircularScrollView<ItemT>({
                 result.boundary,
             );
         },
-        [scrollTop, items],
+        [scrollTop, firstIndexScrollTop],
     );
 
     // console.log('\n\n\n', items, '\n\n\n');
