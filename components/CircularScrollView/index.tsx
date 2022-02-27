@@ -39,7 +39,6 @@ function CircularScrollView<ItemT>({
     const contentsHeight = useSharedValue(0);
     const itemLength = useSharedValue(0);
     const height = useSharedValue(0);
-    const boundary = useSharedValue<number[]>([]);
     const firstIndexScrollTop = useSharedValue(0);
 
     const [items, setItems] = useState<{ value: number; order: number }[]>([]);
@@ -70,7 +69,6 @@ function CircularScrollView<ItemT>({
         height,
         itemHeight,
         itemLength,
-        boundary,
         buffer,
     ]);
 
