@@ -49,15 +49,24 @@ export const getBoundaryWithOrder = (
             curOrders.push(prevItem.order);
         }
 
-        return [
-            ...prev.slice(1, prev.length),
-            {
-                value: boundary[boundary.length - 1],
-                order: Math.min(
-                    ...allOrders.filter(order => !curOrders.includes(order)),
-                ),
-            },
-        ];
+        const boundaryWithOrder = prev.slice(1, prev.length);
+        boundaryWithOrder.push({
+            value: boundary[boundary.length - 1],
+            order: Math.min(
+                ...allOrders.filter(order => !curOrders.includes(order)),
+            ),
+        });
+        return boundaryWithOrder;
+
+        // return [
+        //     ...prev.slice(1, prev.length),
+        //     {
+        //         value: boundary[boundary.length - 1],
+        //         order: Math.min(
+        //             ...allOrders.filter(order => !curOrders.includes(order)),
+        //         ),
+        //     },
+        // ];
     } else {
         for (
             let i = 1, j = (maxIndex + 1) * i -1;
@@ -68,15 +77,32 @@ export const getBoundaryWithOrder = (
             curOrders.push(prevItem.order);
         }
 
-        return [
-            {
-                value: boundary[0],
-                order: Math.min(
-                    ...allOrders.filter(order => !curOrders.includes(order)),
-                ),
-            },
-            ...prev.slice(0, prev.length - 1),
-        ];
+        const boundaryWithOrder = prev.slice(0, prev.length - 1);
+        boundaryWithOrder.unshift({
+            value: boundary[0],
+            order: Math.min(
+                ...allOrders.filter(order => !curOrders.includes(order)),
+            ),
+        });
+
+        return boundaryWithOrder;
+
+        // boundaryWithOrder.push({
+        //     value: boundary[boundary.length - 1],
+        //     order: Math.min(
+        //         ...allOrders.filter(order => !curOrders.includes(order)),
+        //     ),
+        // });
+
+        // return [
+        //     {
+        //         value: boundary[0],
+        //         order: Math.min(
+        //             ...allOrders.filter(order => !curOrders.includes(order)),
+        //         ),
+        //     },
+        //     ...prev.slice(0, prev.length - 1),
+        // ];
     }
 };
 
