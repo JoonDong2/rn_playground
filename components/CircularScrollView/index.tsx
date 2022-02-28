@@ -109,7 +109,7 @@ function CircularScrollView<ItemT>({
                 );
             },
         },
-        [firstIndexScrollTop],
+        [items],
     );
 
     const setFirstIndexScrollTop = useCallback(
@@ -165,7 +165,7 @@ function CircularScrollView<ItemT>({
                 result.boundary,
             );
         },
-        [scrollTop, firstIndexScrollTop],
+        [scrollTop, items],
     );
 
     // console.log('\n\n\n', items, '\n\n\n');
