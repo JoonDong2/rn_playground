@@ -3,41 +3,29 @@ import Animated, {
     SharedValue,
     useAnimatedStyle,
 } from 'react-native-reanimated';
-const isEqual = require('react-fast-compare');
+import isEqual from 'react-fast-compare';
 
 interface ItemContainerProps {
     children: any;
-    itemHeight: number;
-    index: number;
     firstIndexScrollTop: SharedValue<number>;
-    workletRefresh?: any;
 }
 
 const ItemContainer = ({
     children,
-    itemHeight,
-    index,
     firstIndexScrollTop,
-    workletRefresh,
 }: ItemContainerProps) => {
     const containerStyle = useAnimatedStyle(
         () => ({
-            top: firstIndexScrollTop.value + index * itemHeight,
+            transform: [
+                {
+                    translateY: firstIndexScrollTop.value,
+                },
+            ],
         }),
-        [workletRefresh],
+        [],
     );
 
-    return (
-        <Animated.View
-            style={[
-                containerStyle,
-                {
-                    position: 'absolute',
-                },
-            ]}>
-            {children}
-        </Animated.View>
-    );
+    return <Animated.View style={containerStyle}>{children}</Animated.View>;
 };
 
 export default React.memo(ItemContainer, isEqual);

@@ -79,6 +79,12 @@ function CircularScrollView<ItemT>({
         },
         [height],
     );
+    const restoreScrollTop = useCallback(async () => {
+        scrollTop.value = circulateScrollTop({
+            scrollTop: scrollTop.value,
+            contentsHeight: contentsHeight.value,
+        });
+    }, [contentsHeight.value, scrollTop]);
 
     const onModalGestureEvent = useAnimatedGestureHandler<
         PanGestureHandlerGestureEvent,
@@ -101,10 +107,7 @@ function CircularScrollView<ItemT>({
                     },
                     isFinished => {
                         if (!isFinished) return;
-                        scrollTop.value = circulateScrollTop({
-                            scrollTop: scrollTop.value,
-                            contentsHeight: contentsHeight.value,
-                        });
+                        runOnJS(restoreScrollTop)();
                     },
                 );
             },
@@ -112,16 +115,20 @@ function CircularScrollView<ItemT>({
         [items],
     );
 
+    const setBoundary = useCallback(
+        (boundary: number[]) => {
+            setItems(prev =>
+                getBoundaryWithOrder(boundary, prev, data.length - 1),
+            );
+        },
+        [data.length],
+    );
+
     const setFirstIndexScrollTop = useCallback(
-        async (scrollTop: number, boundary?: number[]) => {
-            if (boundary) {
-                setItems(prev =>
-                    getBoundaryWithOrder(boundary, prev, data.length - 1),
-                );
-            }
+        (scrollTop: number) => {
             firstIndexScrollTop.value = scrollTop;
         },
-        [data.length, firstIndexScrollTop],
+        [firstIndexScrollTop],
     );
 
     useAnimatedReaction(
@@ -147,23 +154,23 @@ function CircularScrollView<ItemT>({
 
             const { boundary: oldBoundary } = previous;
             const { scrollTop, boundary: newBoundary } = result;
-            const firstIndexScrollTop =
+            const newFirstIndexScrollTop =
                 scrollTop -
                 (Math.ceil(scrollTop / itemHeight) + buffer) * itemHeight;
 
             if (
                 newBoundary.every((item, index) => oldBoundary[index] === item)
             ) {
-                runOnJS(setFirstIndexScrollTop)(firstIndexScrollTop);
+                // firstIndexScrollTop.value = newFirstIndexScrollTop;
+                runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop);
                 return;
             }
 
             // console.log('boundary:', newBoundary);
 
-            runOnJS(setFirstIndexScrollTop)(
-                firstIndexScrollTop,
-                result.boundary,
-            );
+            runOnJS(setBoundary)(newBoundary);
+            // firstIndexScrollTop.value = newFirstIndexScrollTop;
+            runOnJS(setFirstIndexScrollTop)(newFirstIndexScrollTop);
         },
         [scrollTop, items],
     );
@@ -178,14 +185,11 @@ function CircularScrollView<ItemT>({
                     { overflow: 'hidden', backgroundColor: '#000000' },
                 ]}
                 onLayout={onLayout}>
-                {items.map((item, index) => {
+                {items.map(item => {
                     return (
                         <ItemContainer
                             key={`${item.value}-${item.order}`}
-                            itemHeight={itemHeight}
-                            firstIndexScrollTop={firstIndexScrollTop}
-                            workletRefresh={items}
-                            index={index}>
+                            firstIndexScrollTop={firstIndexScrollTop}>
                             {renderItem({
                                 item: data[item.value],
                                 index: item.value,
