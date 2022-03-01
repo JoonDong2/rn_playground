@@ -31,15 +31,16 @@ export const getBoundaryWithOrder = (
 
     const isUpScroll1 = prev[0].value === maxIndex && boundary[0] === 0;
     const isUpScroll2 = !isUpScroll1 && prev[0].value < boundary[0];
-    const isUpScroll = isUpScroll1 || isUpScroll2;
 
     const isDownScroll = prev[0].value === 0 && boundary[0] === maxIndex;
+
+    const isUpScroll = (isUpScroll1 || isUpScroll2) && !isDownScroll;
 
     const maxOrder = Math.floor(boundary.length / (maxIndex + 1));
     const allOrders = Array.from({ length: maxOrder + 1 }, (_, i) => i);
     const curOrders: number[] = [];
 
-    if (isUpScroll && !isDownScroll) {
+    if (isUpScroll) {
         for (
             let i = 1, j = prev.length - (maxIndex + 1) * i;
             j >= 0;
