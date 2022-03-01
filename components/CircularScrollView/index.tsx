@@ -14,11 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import ItemContainer from './ItemContainer';
 import { getBoundaryWithOrder, initializeBoundary } from './optimizer';
-import {
-    calculateBoundary,
-    calculateFirstIndex,
-    circulateScrollTop,
-} from './ranges';
+import { calculateBoundary, circulateScrollTop } from './ranges';
 
 interface CircularScrollViewProps<ItemT> {
     data: ItemT[];
@@ -45,8 +41,9 @@ function CircularScrollView<ItemT>({
     const height = useSharedValue(0);
     const firstIndexScrollTop = useSharedValue(-buffer * itemHeight);
     const firstIndex = useSharedValue(
-        data[(-buffer % (data.length - 1)) + data.length - 1],
+        (-buffer % (data.length - 1)) + data.length - 1,
     );
+    const oldBoundary = useSharedValue<number[]>([]);
 
     const [items, setItems] = useState<{ value: number; order: number }[]>([]);
 
