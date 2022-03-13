@@ -3,60 +3,53 @@ import Animated, {
     SharedValue,
     useAnimatedStyle,
 } from 'react-native-reanimated';
-import { circulateScrollTop } from './ranges';
-const isEqual = require("react-fast-compare");
+import isEqual from 'react-fast-compare';
 
 interface ItemContainerProps {
     children: any;
-    scrollTop: SharedValue<number>;
-    firstIndex: number;
-    firstIndexValue: number;
-    itemHeight: number;
-    itmeLength: number;
     index: number;
-    contentsHeight: SharedValue<number>;
+    itemHeight: number;
+    firstIndex: SharedValue<number>;
+    firstIndexValue: number;
+    maxIndex: number;
+    firstIndexScrollTop: SharedValue<number>;
 }
 
 const ItemContainer = ({
     children,
-    scrollTop,
-    firstIndex,
-    firstIndexValue,
-    itemHeight,
-    itmeLength,
     index,
-    contentsHeight,
+    itemHeight,
+    firstIndex, // firstIndexScrollTop이 적용되었어야 할 (하지만 적용되지 바뀌지 않았을 수도 있는) 실제 인덱스의 값
+    firstIndexValue, // items[0]의 값
+    maxIndex,
+    firstIndexScrollTop,
 }: ItemContainerProps) => {
     const containerStyle = useAnimatedStyle(() => {
-        const circulatedScrollTop = circulateScrollTop({
-            scrollTop: scrollTop.value,
-            contentsHeight: contentsHeight.value,
-        });
+        // console.log("여기", firstIndex.value, firstIndexValue)
 
-        const top =
-            circulatedScrollTop <= 0
-                ? circulatedScrollTop +
-                  firstIndexValue * itemHeight +
-                  (index - firstIndex) * itemHeight
-                : circulatedScrollTop +
-                  (firstIndexValue - itmeLength) * itemHeight +
-                  (index - firstIndex) * itemHeight;
+        const isUpScroll1 =
+            firstIndexValue === maxIndex && firstIndex.value === 0;
+        const isUpScroll2 = !isUpScroll1 && firstIndexValue < firstIndex.value;
 
-        // console.log(`index: ${index} top: ${top} circulatedScrollTop: ${circulatedScrollTop} firstIndexValue * itemHeight: ${firstIndexValue * itemHeight} (index - firstIndex) * itemHeight: ${(index - firstIndex) * itemHeight}`);
-        // console.log(`index: ${index} top: ${top} firstIndexValue: ${firstIndexValue}`);
+        const isDownScroll =
+            firstIndexValue === 0 && firstIndex.value === maxIndex;
+
+        const isUpScroll = (isUpScroll1 || isUpScroll2) && !isDownScroll;
+
         return {
-            top: top || 0,
+            top:
+                firstIndexScrollTop.value +
+                itemHeight * index +
+                (firstIndex.value === firstIndexValue
+                    ? 0
+                    : isUpScroll
+                    ? itemHeight
+                    : -itemHeight),
         };
-    });
+    }, [index]);
 
     return (
-        <Animated.View
-            style={[
-                containerStyle,
-                {
-                    position: 'absolute',
-                },
-            ]}>
+        <Animated.View style={[{ position: 'absolute' }, containerStyle]}>
             {children}
         </Animated.View>
     );

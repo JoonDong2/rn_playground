@@ -11,33 +11,27 @@ export const circulateScrollTop = ({
 
 export const calculateFirstIndex = ({
     scrollTop,
-    contentsHeight,
     itemHeight,
     itemLength,
+    buffer,
 }: {
     scrollTop: number;
-    contentsHeight: number;
     itemHeight: number;
     itemLength: number;
+    buffer: number;
 }) => {
     'worklet';
-    const circulatedScrollTop = circulateScrollTop({
-        scrollTop,
-        contentsHeight,
-    });
-
-    const pureIndex = Math.floor(-circulatedScrollTop / itemHeight);
-    if (pureIndex < 0) return pureIndex + itemLength;
-    return pureIndex;
+    const pureIndex =
+        (Math.floor(-scrollTop / itemHeight) - buffer) % itemLength;
+    return pureIndex < 0 ? pureIndex + itemLength : pureIndex;
 };
 
 export const calculateBoundary = ({
     scrollTop,
     height,
-    contentsHeight,
     itemHeight,
     itemLength,
-    buffer = 0,
+    buffer,
 }: {
     scrollTop: number;
     height: number;
@@ -47,26 +41,22 @@ export const calculateBoundary = ({
     buffer: number;
 }) => {
     'worklet';
-    let firstIndex = calculateFirstIndex({
+    const firstIndex = calculateFirstIndex({
         scrollTop,
-        contentsHeight: contentsHeight,
         itemHeight,
         itemLength: itemLength,
+        buffer,
     });
 
+    const doubleBuffer = buffer * 2;
     const maxIndex = itemLength - 1;
 
-    if (buffer) {
-        firstIndex = ((firstIndex - buffer + 1) % maxIndex) + maxIndex;
-    }
-
-    const doubleBuffer = buffer * 2;
     const pureOffsetCount = Math.ceil(height / itemHeight);
-    const offsetCount =
-        Math.ceil(
-            (height - (pureOffsetCount - 1) * itemHeight) / itemHeight +
-                pureOffsetCount,
-        ) + doubleBuffer;
+    const offsetCount = Math.ceil(
+        (height - (pureOffsetCount - 1) * itemHeight) / itemHeight +
+            pureOffsetCount +
+            doubleBuffer,
+    );
 
     const boundary = [];
     for (let i = 0; i < offsetCount; i++) {

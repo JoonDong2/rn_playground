@@ -16,12 +16,14 @@ interface SharedItemProps {
     title: string;
     desc: string;
     index: number;
+    order: number;
     style?: StyleProp<ViewStyle>;
     onPress?: (props: {
         image: string;
         title: string;
         desc: string;
         index: number;
+        order: number;
     }) => void;
 }
 
@@ -30,12 +32,13 @@ export default ({
     title,
     desc,
     index,
+    order,
     style,
     onPress: onPressProp,
 }: SharedItemProps) => {
     const onPress = useCallback(() => {
-        if (onPressProp) onPressProp({ image, title, desc, index });
-    }, [desc, image, index, onPressProp, title]);
+        if (onPressProp) onPressProp({ image, title, desc, index, order });
+    }, [desc, image, index, onPressProp, order, title]);
 
     const coverWidth = useRef(screen.width / 1.75).current;
 
@@ -47,7 +50,7 @@ export default ({
                     width: screen.width,
                     height: 300,
                 }}>
-                <SharedElement id={`${index}-${image}.image`}>
+                <SharedElement id={`${index}-${order}.image`}>
                     <FastImage
                         source={{ uri: image }}
                         style={{ width: screen.width, height: 300 }}
@@ -60,7 +63,7 @@ export default ({
                             position: 'absolute',
                         },
                     ]}
-                    id={`${index}-${image}.left-cover`}>
+                    id={`${index}-${order}.left-cover`}>
                     <ItemCover
                         direction="left"
                         odd={index % 2 === 1}
@@ -75,7 +78,7 @@ export default ({
                             right: 0,
                         },
                     ]}
-                    id={`${index}-${image}.right-cover`}>
+                    id={`${index}-${order}.right-cover`}>
                     <ItemCover
                         direction="right"
                         odd={index % 2 === 1}

@@ -17,6 +17,7 @@ export default () => {
             title: string;
             desc: string;
             index: number;
+            order: number;
         }) => {
             navigation.navigate('WebtoonDetail', props);
         },
@@ -24,8 +25,23 @@ export default () => {
     );
 
     const renderItem = useCallback(
-        ({ item, index }: { item: DataProps; index: number }) => {
-            return <SharedItem {...item} index={index} onPress={onPress} />;
+        ({
+            item,
+            index,
+            order,
+        }: {
+            item: DataProps;
+            index: number;
+            order: number;
+        }) => {
+            return (
+                <SharedItem
+                    {...item}
+                    index={index}
+                    order={order}
+                    onPress={onPress}
+                />
+            );
         },
         [onPress],
     );

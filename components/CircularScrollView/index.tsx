@@ -13,32 +13,39 @@ import Animated, {
     withDecay,
 } from 'react-native-reanimated';
 import ItemContainer from './ItemContainer';
+import { getBoundaryWithOrder, initializeBoundary } from './optimizer';
 import { calculateBoundary, circulateScrollTop } from './ranges';
 
 interface CircularScrollViewProps<ItemT> {
     data: ItemT[];
-    renderItem: (props: { item: ItemT; index: number }) => React.ReactElement;
+    renderItem: (props: {
+        item: ItemT;
+        index: number;
+        order: number;
+    }) => React.ReactElement;
     itemHeight: number;
-    buffer?: number;
     style?: StyleProp<ViewStyle>;
+    buffer?: number;
 }
-
-// let contentsHeight: number = 0;
 
 function CircularScrollView<ItemT>({
     data,
     renderItem,
     itemHeight = 80,
-    buffer = 0,
     style,
+    buffer = 1,
 }: CircularScrollViewProps<ItemT>) {
     const scrollTop = useSharedValue(0);
     const contentsHeight = useSharedValue(0);
     const itemLength = useSharedValue(0);
     const height = useSharedValue(0);
-    const boundary = useSharedValue<number[]>([]);
+    const firstIndexScrollTop = useSharedValue(-buffer * itemHeight);
+    const firstIndex = useSharedValue(
+        (-buffer % (data.length - 1)) + data.length - 1,
+    );
+    const oldBoundary = useSharedValue<number[]>([]);
 
-    const [items, setItems] = useState<number[]>([]);
+    const [items, setItems] = useState<{ value: number; order: number }[]>([]);
 
     const [layoutHeight, setLayoutHeight] = useState(0);
 
@@ -49,7 +56,7 @@ function CircularScrollView<ItemT>({
         const newItemValue = data.length;
         itemLength.value = newItemValue;
 
-        const newBoudary = calculateBoundary({
+        const boundary = calculateBoundary({
             scrollTop: 0,
             height: layoutHeight,
             contentsHeight: newContentsHeight,
@@ -57,9 +64,8 @@ function CircularScrollView<ItemT>({
             itemLength: newItemValue,
             buffer,
         });
-        boundary.value = newBoudary;
-        // console.log("boundary", newBoudary);
-        setItems(newBoudary);
+        // console.log('boundary', boundary);
+        setItems(initializeBoundary(boundary));
     }, [
         layoutHeight,
         contentsHeight,
@@ -67,7 +73,6 @@ function CircularScrollView<ItemT>({
         height,
         itemHeight,
         itemLength,
-        boundary,
         buffer,
     ]);
 
@@ -78,68 +83,111 @@ function CircularScrollView<ItemT>({
         },
         [height],
     );
+    const restoreScrollTop = useCallback(async () => {
+        scrollTop.value = circulateScrollTop({
+            scrollTop: scrollTop.value,
+            contentsHeight: contentsHeight.value,
+        });
+    }, [contentsHeight.value, scrollTop]);
 
     const onModalGestureEvent = useAnimatedGestureHandler<
         PanGestureHandlerGestureEvent,
         {
             firstScrollTop: number;
         }
-    >({
-        onStart: (_, ctx) => {
-            cancelAnimation(scrollTop);
-            ctx.firstScrollTop = scrollTop.value;
+    >(
+        {
+            onStart: (_, ctx) => {
+                cancelAnimation(scrollTop);
+                ctx.firstScrollTop = scrollTop.value;
+            },
+            onActive: (event, ctx) => {
+                scrollTop.value = ctx.firstScrollTop + event.translationY;
+            },
+            onEnd: event => {
+                scrollTop.value = withDecay(
+                    {
+                        velocity: event.velocityY,
+                    },
+                    isFinished => {
+                        if (!isFinished) return;
+                        runOnJS(restoreScrollTop)();
+                    },
+                );
+            },
         },
-        onActive: (event, ctx) => {
-            scrollTop.value = ctx.firstScrollTop + event.translationY;
-        },
-        onEnd: event => {
-            scrollTop.value = withDecay(
-                {
-                    velocity: event.velocityY,
-                },
-                isFinished => {
-                    if (!isFinished) return;
-                    scrollTop.value = circulateScrollTop({
-                        scrollTop: scrollTop.value,
-                        contentsHeight: contentsHeight.value,
-                    });
-                },
+        [items],
+    );
+
+    const setBoundary = useCallback(
+        (boundary: number[]) => {
+            setItems(prev =>
+                getBoundaryWithOrder(boundary, prev, data.length - 1),
             );
         },
-    });
+        [data.length],
+    );
+
+    const setFirstIndexScrollTop = useCallback(
+        (scrollTop: number, newFirstIndexValue: number) => {
+            firstIndexScrollTop.value = scrollTop;
+            firstIndex.value = newFirstIndexValue;
+        },
+        [firstIndex, firstIndexScrollTop],
+    );
 
     useAnimatedReaction(
         () => {
-            return scrollTop.value;
-        },
-        (result, previous) => {
-            if (previous === null || result === previous) return;
-            // newScrollTop을 사용하여 화면에 표시될 아이템 인덱스 배열 만들기
-            const newBoundary = calculateBoundary({
-                scrollTop: result,
+            const circulatedScrollTop = circulateScrollTop({
+                scrollTop: scrollTop.value,
+                contentsHeight: contentsHeight.value,
+            });
+
+            const boundary = calculateBoundary({
+                scrollTop: circulatedScrollTop,
                 height: height.value,
                 contentsHeight: contentsHeight.value,
                 itemHeight,
-                itemLength: itemLength.value,
+                itemLength: data.length,
                 buffer,
             });
 
+            return { scrollTop: circulatedScrollTop, boundary };
+        },
+        (result, previous) => {
+            if (!previous) return;
+
+            const { boundary: oldBoundary } = previous;
+            const { scrollTop, boundary: newBoundary } = result;
+            const newFirstIndexScrollTop =
+                scrollTop -
+                (Math.ceil(scrollTop / itemHeight) + buffer) * itemHeight;
+
             if (
-                newBoundary.every(
-                    (item, index) => boundary.value[index] === item,
-                )
+                newBoundary.every((item, index) => oldBoundary[index] === item)
             ) {
+                // firstIndexScrollTop.value = newFirstIndexScrollTop;
+                runOnJS(setFirstIndexScrollTop)(
+                    newFirstIndexScrollTop,
+                    oldBoundary[0],
+                );
+                // firstIndex.value = oldBoundary[0];
                 return;
             }
 
-            // console.log("boundary", newBoundary);
-            boundary.value = newBoundary;
-            runOnJS(setItems)(newBoundary);
+            // console.log('boundary:', newBoundary);
+
+            runOnJS(setBoundary)(newBoundary);
+            // firstIndexScrollTop.value = newFirstIndexScrollTop;
+            runOnJS(setFirstIndexScrollTop)(
+                newFirstIndexScrollTop,
+                newBoundary[0],
+            );
         },
-        [scrollTop],
+        [scrollTop, items],
     );
 
-    // console.log("\n\n\n", items, "\n\n\n");
+    // console.log('\n\n\n', items, '\n\n\n');
 
     return (
         <PanGestureHandler onGestureEvent={onModalGestureEvent}>
@@ -149,26 +197,21 @@ function CircularScrollView<ItemT>({
                     { overflow: 'hidden', backgroundColor: '#000000' },
                 ]}
                 onLayout={onLayout}>
-                {items.map((item, index, origin) => {
-                    // console.log("여기", origin, buffer, origin[buffer]);
+                {items.map((item, index) => {
                     return (
-                        // buffer 크기와 동일한 인덱스는 실제 화면에 보이는 첫 번째 인덱스가 된다.
                         <ItemContainer
-                            // style={testStyle}
-                            key={item}
-                            scrollTop={scrollTop}
-                            firstIndex={buffer}
-                            firstIndexValue={origin[buffer]}
-                            itemHeight={itemHeight}
-                            itmeLength={data.length}
+                            key={`${item.value}-${item.order}`}
                             index={index}
-                            contentsHeight={contentsHeight}>
-                            {data[item]
-                                ? renderItem({
-                                      item: data[item],
-                                      index: item,
-                                  })
-                                : null}
+                            itemHeight={itemHeight}
+                            firstIndex={firstIndex}
+                            firstIndexValue={items[0].value}
+                            maxIndex={data.length - 1}
+                            firstIndexScrollTop={firstIndexScrollTop}>
+                            {renderItem({
+                                item: data[item.value],
+                                index: item.value,
+                                order: item.order,
+                            })}
                         </ItemContainer>
                     );
                 })}

@@ -20,13 +20,13 @@ interface WebtoonDetailProps {
 }
 
 export default ({ route, navigation }: WebtoonDetailProps) => {
-    const { image, title, desc, index } = useRef(route.params).current;
+    const { image, title, desc, index, order } = useRef(route.params).current;
     const coverWidth = useRef(screen.width / 1.75).current;
 
     return (
         <TouchableWithoutFeedback onPress={navigation.goBack}>
             <View style={{ flex: 1 }}>
-                <SharedElement id={`${index}-${image}.image`}>
+                <SharedElement id={`${index}-${order}.image`}>
                     <FastImage
                         testID="DetailImage"
                         style={{ width: screen.width, height: window.height }}
@@ -39,7 +39,7 @@ export default ({ route, navigation }: WebtoonDetailProps) => {
                         overflow: 'hidden',
                         position: 'absolute',
                     }}
-                    id={`${index}-${image}.left-cover`}>
+                    id={`${index}-${order}.left-cover`}>
                     <ItemCover
                         direction="left"
                         odd={index % 2 === 1}
@@ -53,7 +53,7 @@ export default ({ route, navigation }: WebtoonDetailProps) => {
                         right: 0,
                         position: 'absolute',
                     }}
-                    id={`${index}-${image}.right-cover`}>
+                    id={`${index}-${order}.right-cover`}>
                     <ItemCover
                         direction="right"
                         odd={index % 2 === 1}

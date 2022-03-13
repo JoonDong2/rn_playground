@@ -11,6 +11,7 @@ export type MainStackParamList = {
         title: string;
         desc: string;
         index: number;
+        order: number;
     };
 };
 
@@ -18,11 +19,11 @@ const Stack = createSharedElementStackNavigator<MainStackParamList>();
 
 export default () => {
     const sharedElements = useCallback(route => {
-        const { image, index } = route.params;
+        const { index, order } = route.params;
         return [
-            `${index}-${image}.image`,
-            `${index}-${image}.left-cover`,
-            `${index}-${image}.right-cover`,
+            `${index}-${order}.image`,
+            `${index}-${order}.left-cover`,
+            `${index}-${order}.right-cover`,
         ];
     }, []);
 
