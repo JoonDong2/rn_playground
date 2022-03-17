@@ -1,6 +1,6 @@
 import { BottomNavigation } from 'react-native-paper';
 import React, { useCallback, useState } from 'react';
-import { TouchableWithoutFeedback, View } from 'react-native';
+import { TouchableWithoutFeedback, View, StatusBar, LayoutChangeEvent } from 'react-native';
 import {
     PanGestureHandler,
     PanGestureHandlerGestureEvent,
@@ -69,8 +69,6 @@ export default () => {
     const [modalVisible, setModalVisible] = useState(false);
 
     modalMaxHeight = window.height - top;
-    modalMinifiedTop =
-        window.height - bottom - TAB_BAR_HEIGHT - MINIFIED_MODAL_HEIGHT;
 
     // screen.height: 사라진 상태 (modalVisible: false)
     // modalMinifiedTop: 최소화 상태
@@ -307,6 +305,11 @@ export default () => {
         { key: 'KakaoWebtoon', title: '카카오웹툰 클론' },
     ]);
 
+    const onLayout = useCallback((e: LayoutChangeEvent) => {
+        if (modalMinifiedTop) return;
+        modalMinifiedTop = e.nativeEvent.layout.y - MINIFIED_MODAL_HEIGHT
+    }, [])
+
     return (
         <View
             style={{
@@ -356,6 +359,7 @@ export default () => {
             )}
 
             <Animated.View
+                onLayout={onLayout}
                 style={[
                     tabBarStyle,
                     {
