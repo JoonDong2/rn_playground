@@ -35,74 +35,61 @@ function CircularScrollView<ItemT>({
     style,
     buffer = 1,
 }: CircularScrollViewProps<ItemT>) {
-    const scrollTop = useSharedValue(0);
-    const contentsHeight = useSharedValue(0);
-    const itemLength = useSharedValue(0);
-    const height = useSharedValue(0);
     const firstIndexScrollTop = useSharedValue(-buffer * itemHeight);
-    const firstIndex = useSharedValue(
-        (-buffer % (data.length - 1)) + data.length - 1,
-    );
-    const oldBoundary = useSharedValue<number[]>([]);
-
     const [items, setItems] = useState<{ value: number; order: number }[]>([]);
 
+    const scrollTop = useSharedValue(-buffer * itemHeight);
+    const scrollTopStart = useSharedValue(0);
+    const deprecatedTranslationY = useSharedValue(0);
+
+    const { value: threshold } = useSharedValue(buffer * itemHeight);
+
+    const { value: itemLength } = useSharedValue(data.length);
+    const { value: contentsHeight } = useSharedValue(data.length * itemHeight);
     const [layoutHeight, setLayoutHeight] = useState(0);
 
+    // 초기화
     useEffect(() => {
         if (!layoutHeight) return;
-        const newContentsHeight = data.length * itemHeight;
-        contentsHeight.value = newContentsHeight;
-        const newItemValue = data.length;
-        itemLength.value = newItemValue;
 
         const boundary = calculateBoundary({
             scrollTop: 0,
             height: layoutHeight,
-            contentsHeight: newContentsHeight,
+            contentsHeight,
             itemHeight,
-            itemLength: newItemValue,
+            itemLength,
             buffer,
         });
-        // console.log('boundary', boundary);
-        setItems(initializeBoundary(boundary));
-    }, [
-        layoutHeight,
-        contentsHeight,
-        data,
-        height,
-        itemHeight,
-        itemLength,
-        buffer,
-    ]);
 
-    const onLayout = useCallback(
-        (event: LayoutChangeEvent) => {
-            height.value = event.nativeEvent.layout.height;
-            setLayoutHeight(event.nativeEvent.layout.height);
-        },
-        [height],
-    );
+        setItems(initializeBoundary(boundary));
+    }, [layoutHeight, contentsHeight, data, itemHeight, itemLength, buffer]);
+
+    const onLayout = useCallback((event: LayoutChangeEvent) => {
+        setLayoutHeight(event.nativeEvent.layout.height);
+    }, []);
+
     const restoreScrollTop = useCallback(async () => {
         scrollTop.value = circulateScrollTop({
             scrollTop: scrollTop.value,
-            contentsHeight: contentsHeight.value,
+            contentsHeight,
         });
-    }, [contentsHeight.value, scrollTop]);
+        deprecatedTranslationY.value = 0;
+    }, [contentsHeight, deprecatedTranslationY, scrollTop]);
 
-    const onModalGestureEvent = useAnimatedGestureHandler<
+    const onGestureEvent = useAnimatedGestureHandler<
         PanGestureHandlerGestureEvent,
         {
-            firstScrollTop: number;
+            scrollTopStart: number;
         }
     >(
         {
             onStart: (_, ctx) => {
                 cancelAnimation(scrollTop);
-                ctx.firstScrollTop = scrollTop.value;
+                ctx.scrollTopStart = scrollTop.value;
+                scrollTopStart.value = scrollTop.value;
             },
             onActive: (event, ctx) => {
-                scrollTop.value = ctx.firstScrollTop + event.translationY;
+                scrollTop.value = ctx.scrollTopStart + event.translationY;
             },
             onEnd: event => {
                 scrollTop.value = withDecay(
@@ -129,68 +116,67 @@ function CircularScrollView<ItemT>({
     );
 
     const setFirstIndexScrollTop = useCallback(
-        (scrollTop: number, newFirstIndexValue: number) => {
+        (scrollTop: number) => {
             firstIndexScrollTop.value = scrollTop;
-            firstIndex.value = newFirstIndexValue;
         },
-        [firstIndex, firstIndexScrollTop],
+        [firstIndexScrollTop],
     );
 
     useAnimatedReaction(
-        () => {
-            const circulatedScrollTop = circulateScrollTop({
-                scrollTop: scrollTop.value,
-                contentsHeight: contentsHeight.value,
-            });
-
-            const boundary = calculateBoundary({
-                scrollTop: circulatedScrollTop,
-                height: height.value,
-                contentsHeight: contentsHeight.value,
-                itemHeight,
-                itemLength: data.length,
-                buffer,
-            });
-
-            return { scrollTop: circulatedScrollTop, boundary };
-        },
+        () => ({
+            scrollTop: scrollTop.value,
+            translationY: Math.abs(scrollTop.value - scrollTopStart.value),
+        }),
         (result, previous) => {
             if (!previous) return;
 
-            const { boundary: oldBoundary } = previous;
-            const { scrollTop, boundary: newBoundary } = result;
-            const newFirstIndexScrollTop =
-                scrollTop -
-                (Math.ceil(scrollTop / itemHeight) + buffer) * itemHeight;
+            const { scrollTop, translationY } = result;
 
-            if (
-                newBoundary.every((item, index) => oldBoundary[index] === item)
-            ) {
-                // firstIndexScrollTop.value = newFirstIndexScrollTop;
-                runOnJS(setFirstIndexScrollTop)(
-                    newFirstIndexScrollTop,
-                    oldBoundary[0],
-                );
-                // firstIndex.value = oldBoundary[0];
+            const pureTranslationY =
+                translationY - deprecatedTranslationY.value;
+
+            console.log("여기", translationY, deprecatedTranslationY.value);
+            if (pureTranslationY < threshold) {
+                firstIndexScrollTop.value = scrollTop;
                 return;
             }
 
-            // console.log('boundary:', newBoundary);
+            deprecatedTranslationY.value = translationY;
 
-            runOnJS(setBoundary)(newBoundary);
-            // firstIndexScrollTop.value = newFirstIndexScrollTop;
-            runOnJS(setFirstIndexScrollTop)(
-                newFirstIndexScrollTop,
-                newBoundary[0],
-            );
+            return;
+
+            // const newFirstIndexScrollTop =
+            //     scrollTop -
+            //     (Math.ceil(scrollTop / itemHeight) + buffer) * itemHeight;
+
+            // if (
+            //     newBoundary.every((item, index) => oldBoundary[index] === item)
+            // ) {
+            //     // firstIndexScrollTop.value = newFirstIndexScrollTop;
+            //     runOnJS(setFirstIndexScrollTop)(
+            //         newFirstIndexScrollTop,
+            //         oldBoundary[0],
+            //     );
+            //     // firstIndex.value = oldBoundary[0];
+            //     return;
+            // }
+
+            // // console.log('boundary:', newBoundary);
+
+            // runOnJS(setBoundary)(newBoundary);
+            // // firstIndexScrollTop.value = newFirstIndexScrollTop;
+            // runOnJS(setFirstIndexScrollTop)(
+            //     newFirstIndexScrollTop,
+            //     newBoundary[0],
+            // );
         },
-        [scrollTop, items],
+        [scrollTop, items, threshold],
     );
 
     // console.log('\n\n\n', items, '\n\n\n');
 
     return (
-        <PanGestureHandler onGestureEvent={onModalGestureEvent}>
+        <PanGestureHandler onGestureEvent={onGestureEvent}>
             <Animated.View
                 style={[
                     style,
@@ -203,9 +189,6 @@ function CircularScrollView<ItemT>({
                             key={`${item.value}-${item.order}`}
                             index={index}
                             itemHeight={itemHeight}
-                            firstIndex={firstIndex}
-                            firstIndexValue={items[0].value}
-                            maxIndex={data.length - 1}
                             firstIndexScrollTop={firstIndexScrollTop}>
                             {renderItem({
                                 item: data[item.value],
