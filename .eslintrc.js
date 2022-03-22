@@ -19,5 +19,7 @@ module.exports = {
         'jest/no-identical-title': 'error',
         'jest/prefer-to-have-length': 'warn',
         'jest/valid-expect': 'error',
+        '@typescript-eslint/no-unused-vars': [2, { args: 'none' }],
+        'react/prop-types': 0,
     },
 };
