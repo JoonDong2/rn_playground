@@ -74,7 +74,13 @@ function CircularScrollView<ItemT>({
             contentsHeight,
         });
         deprecatedTranslationY.value = 0;
-    }, [contentsHeight, deprecatedTranslationY, scrollTop]);
+        scrollTop.value = firstIndexScrollTop.value;
+    }, [
+        contentsHeight,
+        deprecatedTranslationY,
+        firstIndexScrollTop,
+        scrollTop,
+    ]);
 
     const onGestureEvent = useAnimatedGestureHandler<
         PanGestureHandlerGestureEvent,
@@ -135,7 +141,6 @@ function CircularScrollView<ItemT>({
             const pureTranslationY =
                 translationY - deprecatedTranslationY.value;
 
-            console.log("여기", translationY, deprecatedTranslationY.value);
             if (pureTranslationY < threshold) {
                 firstIndexScrollTop.value = scrollTop;
                 return;
@@ -143,6 +148,9 @@ function CircularScrollView<ItemT>({
 
             deprecatedTranslationY.value = translationY;
 
+            // TODO: scrollTop 재계산 (입력X)
+            // TODO: 새로운 scrollTop으로 firstIndexScrollTop 계산
+            // TODO: 바운더리 계산
             return;
 
             // const newFirstIndexScrollTop =
